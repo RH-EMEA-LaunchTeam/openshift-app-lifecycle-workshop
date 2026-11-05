@@ -80,15 +80,18 @@ Your numbers will differ, but they will not all be 6.
 [#lose-data]
 === 2. Lose data on pod restart
 
-*What:* Delete one pod and check how many notes are left in total.
+*What:* Delete the pod that holds the most notes and check what is left.
 
 *Why:* Pods are replaced all the time: node maintenance, cluster upgrades, rescheduling, new image versions. With local state, every replacement is data loss.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-POD=$(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} -o name | head -1)
-oc exec "$POD" -n "$NS" --context {lab-context} -- wc -l /opt/app-root/data/notes.txt
+# Pick the pod that holds the most notes
+POD=$(for p in $(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} -o name); do
+  echo "$(oc exec "$p" -n "$NS" --context {lab-context} -- wc -l /opt/app-root/data/notes.txt | awk '{print $1}') $p"
+done | sort -rn | head -1 | awk '{print $2}')
+echo "Deleting $POD"
 oc delete "$POD" -n "$NS" --context {lab-context}
 ----
 
@@ -120,7 +123,7 @@ The notes stored in the deleted pod are gone for good.
 [#database]
 === 3. Move state to a database
 
-icon:clock[] ~1 minute (volume provisioning and database initialisation)
+icon:clock[] ~30 seconds (volume provisioning and database initialisation)
 
 *What:* Create the database credentials, deploy PostgreSQL, then apply the Deployment that connects to it through `DATABASE_URL`.
 
@@ -156,7 +159,7 @@ NOTE: The PostgreSQL image comes from `registry.redhat.io`, which requires authe
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc get pods -n "$NS" --context {lab-context}
+oc get pods -l app.kubernetes.io/part-of=notes-app -n "$NS" --context {lab-context}
 for i in 1 2 3; do curl -sk "https://$ROUTE/api/info" | jq -r '"\(.pod) \(.storage)"'; done
 ----
 
@@ -224,7 +227,7 @@ Open `https://$ROUTE` in a browser: each note shows which pod wrote it, and they
 [#rolling-update]
 === 5. Zero-downtime rolling update
 
-icon:clock[] ~45 seconds
+icon:clock[] ~1 minute
 
 *What:* Send a request every half second while restarting the Deployment, then count the HTTP status codes.
 
@@ -233,7 +236,7 @@ icon:clock[] ~45 seconds
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-( for i in $(seq 1 80); do
+( for i in $(seq 1 120); do
     curl -sk -o /dev/null -w '%\{http_code}\n' "https://$ROUTE/api/notes"; sleep 0.5
   done ) > /tmp/rollout-codes.txt &
 
@@ -249,7 +252,7 @@ sort /tmp/rollout-codes.txt | uniq -c
 [.console-output]
 [source,bash]
 ----
-     80 200
+     120 200
 ----
 
 If you see a few `502` or `503` responses, compare with the Step 4 Deployment (no `preStop` hook, one replica) to see why each setting matters.

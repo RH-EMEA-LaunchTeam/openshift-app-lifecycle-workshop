@@ -46,7 +46,7 @@ cat app/Containerfile.legacy
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-grep -c PROBLEM app/Containerfile.legacy
+grep -c '^# PROBLEM' app/Containerfile.legacy
 ----
 
 [.console-output]
@@ -151,6 +151,8 @@ oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context {lab-conte
 NAME                            READY   STATUS             RESTARTS      AGE
 notes-legacy-6d9c7b8f5d-x2kqp   0/1     CrashLoopBackOff   2 (15s ago)   40s
 ----
+
+The status alternates between `Error` (the container just exited) and `CrashLoopBackOff` (Kubernetes is waiting before the next restart). Both mean the same thing here.
 ====
 
 '''
@@ -172,26 +174,28 @@ oc logs deploy/notes-legacy -n "$NS" --context {lab-context} | tail -3
 [source,bash]
 ----
     with open(self.path, "a", encoding="utf-8"):
-         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PermissionError: [Errno 13] Permission denied: '/data/notes.txt'
 ----
 
-Now check the SCC and the user ID:
+Now check which SCC admitted the pod and which user ID it assigned:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
 oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context {lab-context} \
-  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
-oc debug deploy/notes-legacy -n "$NS" --context {lab-context} -- id
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{" runAsUser="}{.items[0].spec.containers[0].securityContext.runAsUser}{"\n"}'
 ----
 
 [.console-output]
 [source,bash]
 ----
-restricted-v2
-uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000
+restricted-v2 runAsUser=1000680000
 ----
+
+The image never asked for that UID. `restricted-v2` injected it into the pod spec from the namespace range.
+
+WARNING: Do not use `oc debug` to check the UID here. A debug pod is created by *your* user, and as a cluster administrator you are allowed to use more permissive SCCs, so the debug pod runs as root even though the real pods do not. Pods created by a Deployment are admitted with the namespace's service account, which only has `restricted-v2`.
 
 .Verify: Understand what happened
 [%collapsible]

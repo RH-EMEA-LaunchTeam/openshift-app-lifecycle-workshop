@@ -28,7 +28,7 @@ spec:
         app.kubernetes.io/name: notes-app
         app.kubernetes.io/part-of: notes-app
     spec:
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 40   # 15s preStop + up to 20s gunicorn graceful shutdown
       containers:
         - name: notes-app
           image: notes-app:latest
@@ -54,11 +54,12 @@ spec:
             - name: DATABASE_URL
               value: postgresql://$(DB_USER):$(DB_PASSWORD)@notes-db:5432/notes
           lifecycle:
-            # Keep serving for a few seconds after termination starts, so the
-            # router and Service stop sending traffic before gunicorn shuts down.
+            # Keep serving after termination starts, so the router and Service
+            # stop sending traffic before gunicorn shuts down. The OpenShift
+            # router reloads at most every 5s, so 15s leaves a safe margin.
             preStop:
               exec:
-                command: ["sleep", "5"]
+                command: ["sleep", "15"]
           resources:
             requests:
               cpu: 50m

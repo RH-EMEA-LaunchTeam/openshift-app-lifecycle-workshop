@@ -57,7 +57,7 @@ for d in $deployments; do
 
   # 1. Arbitrary non-root UID
   scc=$(echo "$pj" | jq -r '.items[0].metadata.annotations["openshift.io/scc"] // "unknown"')
-  crashing=$(echo "$pj" | jq -r '[.items[].status.containerStatuses[]?.state.waiting.reason // empty] | map(select(. == "CrashLoopBackOff" or . == "Error")) | length')
+  crashing=$(echo "$pj" | jq -r '[.items[].status.containerStatuses[]? | select(.ready == false and (.restartCount > 0 or .state.terminated != null or (.state.waiting.reason // "") == "CrashLoopBackOff"))] | length')
   runas=$(echo "$dj" | jq -r '[.spec.template.spec.securityContext.runAsUser, .spec.template.spec.containers[].securityContext.runAsUser] | map(select(. != null)) | first // "unset"')
   if [[ "$runas" == "0" || ( "$scc" != restricted* && "$scc" != "unknown" ) ]]; then
     result "$name" 1 "Non-root, arbitrary UID" FAIL "scc=$scc runAsUser=$runas"

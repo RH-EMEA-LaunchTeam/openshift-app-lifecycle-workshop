@@ -105,11 +105,20 @@ notes-app      7    Requests and memory limit      PASS req=128Mi lim=256Mi
 notes-app      8    Stateless or explicit state    PASS no volumes (verify the app does not write local state)
 notes-app      10   Unprivileged ports             PASS
 notes-app      10   Survives pod loss (replicas)   PASS replicas=3
-notes-db       ...
+notes-db       1    Non-root, arbitrary UID        PASS scc=restricted-v2
+notes-db       2    Approved registry              PASS registry.redhat.io/rhel9/postgresql-16:latest
+notes-db       3    Image pinned by digest         WARN template uses a tag: registry.redhat.io/rhel9/postgresql-16:latest
+notes-db       4    No secrets in manifest         PASS
+notes-db       4    No secrets in image            WARN external image: inspect it with 'oc image info'
+notes-db       6    Health probes                  PASS readiness,liveness
+notes-db       7    Requests and memory limit      PASS req=256Mi lim=512Mi
+notes-db       8    Stateless or explicit state    WARN uses 1 PVC(s): needs a backup and restore plan
+notes-db       10   Unprivileged ports             PASS
+notes-db       10   Survives pod loss (replicas)   WARN replicas=1
 notes-legacy   1    Non-root, arbitrary UID        FAIL pods crash under scc=restricted-v2 (check logs for permission errors)
 notes-legacy   2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy
 notes-legacy   2    Approved base image            FAIL docker.io/library/python:3.12
-notes-legacy   3    Image pinned by digest         WARN template uses a tag: notes-legacy:latest
+notes-legacy   3    Image pinned by digest         PASS
 notes-legacy   4    No secrets in manifest         PASS
 notes-legacy   4    No secrets in image            FAIL image ENV contains: API_TOKEN
 notes-legacy   6    Health probes                  FAIL none
@@ -121,7 +130,9 @@ notes-legacy   10   Survives pod loss (replicas)   WARN replicas=1
 Items 5 (externalised configuration) and 9 (logs to stdout) need a manual review.
 ----
 
-Look at the `notes-db` rows too: the database is a single replica with a PVC, so it gets warnings on items 8 and 10. That is expected. It is the reason state should live in a service that somebody explicitly owns and backs up.
+Look at the `notes-db` rows too. The database is a single replica with a PVC (warnings on items 8 and 10) and uses an external image by tag (warnings on items 3 and 4). That is expected for a stand-in database, and it is the reason state should live in a service that somebody explicitly owns, pins, patches and backs up.
+
+The legacy image passes item 3 because its ImageStream has local lookup enabled: OpenShift resolved `notes-legacy:latest` to a digest when the Deployment was created. Pinning is often something the platform can do for the tenant.
 
 NOTE: The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as `notes-legacy` does. In Session 7, the same rules become enforced policies in Red Hat Advanced Cluster Security.
 ====

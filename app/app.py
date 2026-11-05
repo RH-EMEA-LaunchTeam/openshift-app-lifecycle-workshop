@@ -84,6 +84,10 @@ class PostgresStore:
         self.psycopg = psycopg
         self.url = url
         with self._conn() as conn:
+            # Several workers and pods start at the same time. CREATE TABLE IF
+            # NOT EXISTS is not safe under concurrency in PostgreSQL, so take a
+            # transaction-scoped advisory lock first (released on commit).
+            conn.execute("SELECT pg_advisory_xact_lock(4242)")
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS notes ("
                 " id SERIAL PRIMARY KEY,"

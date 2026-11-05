@@ -2,6 +2,8 @@
 # Purpose: Platform-side guardrail. Gives every container default requests and
 #          limits if the application team forgot them, and caps the maximum.
 #          The 1Gi default limit leaves room for in-namespace image builds.
+#          No CPU max on purpose: with a max and no default, Kubernetes would
+#          inject the max as a CPU limit into every container.
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -17,5 +19,4 @@ spec:
       default:
         memory: 1Gi
       max:
-        cpu: "2"
         memory: 2Gi

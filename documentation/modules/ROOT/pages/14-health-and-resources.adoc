@@ -206,6 +206,8 @@ oc run no-resources --image=registry.access.redhat.com/ubi9/ubi-minimal \
 oc get pod no-resources -n "$NS" --context {lab-context} -o jsonpath='{.spec.containers[0].resources}' | jq
 ----
 
+NOTE: `oc run` prints a `Warning: would violate PodSecurity "restricted:latest"` message. It is only a warning: the request does not set the security fields itself, and the `restricted-v2` SCC adds them when the pod is admitted. Pods from a proper Deployment manifest would normally set them explicitly.
+
 .Verify: The LimitRange filled in the gaps
 [%collapsible]
 ====
