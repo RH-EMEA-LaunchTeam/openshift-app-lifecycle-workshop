@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/00-setup.html">
+    <link rel="prev" href="index.html">
+    <link rel="next" href="11-legacy-app.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Session 2: Build Pipelines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li><a href="00-setup.html">Cluster Setup</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/00-setup.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page prepares your environment: log in to the workshop cluster, export the workshop variables, clone the repository and create the namespace that every later step uses. Every later step assumes these are done.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="prerequisites"><a class="anchor" href="#prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>One OpenShift 4.16+ cluster (provisioned from the Red Hat Demo Platform for this workshop)</p>
+</li>
+<li>
+<p><code>oc</code> CLI (4.16+) installed, or the OpenShift <strong>Web Terminal</strong> (see the tip below)</p>
+</li>
+<li>
+<p><code>git</code>, <code>curl</code> and <code>jq</code> available</p>
+</li>
+<li>
+<p>Cluster-admin access to the cluster (some steps create platform-side objects such as quotas)</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you cannot install tools on your workstation, open the <strong>Web Terminal</strong> from the <code>&gt;_</code> icon in the top-right corner of the OpenShift web console. It already has <code>oc</code>, <code>git</code>, <code>curl</code> and <code>jq</code>, and it is logged in as your user. You can skip the login part of this page and go straight to <a href="#clone-repo">4. Clone the repository</a>, then run <code>oc config rename-context "$(oc config current-context)" lab</code> once.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="cluster-mapping"><a class="anchor" href="#cluster-mapping"></a>Cluster mapping</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Role</th>
+<th class="tableblock halign-left valign-top">Context name</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workshop cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>lab</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Throwaway cluster used for builds, deployments and all exercises. It is deleted after the hands-on window, so nothing you do here can affect a real environment.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_option_a_pre_provisioned_cluster_demo_platform"><a class="anchor" href="#_option_a_pre_provisioned_cluster_demo_platform"></a>Option A: Pre-provisioned cluster (Demo Platform)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If someone else already set up the context for you, skip to <a href="#option-b">Option B: Quick check (context already configured)</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_gather_cluster_credentials"><a class="anchor" href="#_1_gather_cluster_credentials"></a>1. Gather cluster credentials</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Collect the API URL, console URL and credentials from the Demo Platform email or service page.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need them to log in and to fill in <code>myenv.sh</code>.</p>
+</div>
+<div class="paragraph">
+<p>They look something like:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">Console: https://console-openshift-console.apps.cluster-xxxxx.example.com
+API:     https://api.cluster-xxxxx.example.com:6443
+User:    admin</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The API endpoint answers</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk <a href="https://api.cluster-xxxxx.example.com:6443/version" class="bare">https://api.cluster-xxxxx.example.com:6443/version</a> | jq -r .gitVersion</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">v1.29.x</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>-k</code> skips TLS verification because demo clusters use self-signed certificates. In production, trust the cluster CA instead.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="export-variables"><a class="anchor" href="#export-variables"></a>2. Create your myenv.sh</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create a personal <code>myenv.sh</code> with your cluster details and workshop variables.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> One file holds every environment-specific value, so every command in the workshop can be copied as-is. The file is gitignored because it contains a password.</p>
+</div>
+<div class="paragraph">
+<p>Create <code>myenv.sh</code> at the root of the repository (or in your home directory if you have not cloned it yet) with this structure:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Console URL (for quick reference - not used by scripts)
+# Console: https://console-openshift-console.apps.&lt;cluster-domain&gt;
+
+# ── Workshop variables ───────────────────────────────────────────────────
+export LAB_API_URL="https://api.&lt;cluster-domain&gt;:6443"
+export NS="app-lifecycle"     # change it if several people share one cluster
+export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"
+
+# ── Context cleanup (idempotent) ─────────────────────────────────────────
+oc config delete-context lab 2&gt;/dev/null
+
+# ── Login + rename context ───────────────────────────────────────────────
+oc login "$LAB_API_URL" --username &lt;user&gt; --password &lt;password&gt; --insecure-skip-tls-verify
+oc config rename-context "$(oc config current-context)" lab</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Variable</th>
+<th class="tableblock halign-left valign-top">Used in</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LAB_API_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API server URL of the workshop cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NS</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every step</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Namespace for the reference application. Use a unique value per person if several participants share one cluster, for example <code>app-lifecycle-user1</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GIT_REPO_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#clone-repo">4. Clone the repository</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clone URL of this workshop repository</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ROUTE</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2 to 5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hostname of the application route. Set in <a href="12-image-hygiene.html#expose" class="xref page">Step 2</a>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>--insecure-skip-tls-verify</code> is only acceptable on throwaway demo clusters with self-signed certificates.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: The file defines the variables</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -E '^export' myenv.sh</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export LAB_API_URL="https://api.cluster-xxxxx.example.com:6443"
+export NS="app-lifecycle"
+export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="login-clusters"><a class="anchor" href="#login-clusters"></a>3. Log in and rename the context</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Source <code>myenv.sh</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> It logs in and renames the context to <code>lab</code>. Every <code>oc</code> command in the workshop uses <code>--context lab</code>, so commands never hit the wrong cluster by accident.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">source myenv.sh</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The context exists and is authenticated</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context lab
+oc config get-contexts -o name | grep -x lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">admin
+lab</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="option-b"><a class="anchor" href="#option-b"></a>Option B: Quick check (context already configured)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If someone already ran <code>source myenv.sh</code> for you, check that the context works and that the variables are exported:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context lab
+echo "NS=$NS"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If both print a value, continue with <a href="#clone-repo">4. Clone the repository</a>.</p>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prepare_the_workshop"><a class="anchor" href="#_prepare_the_workshop"></a>Prepare the workshop</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="clone-repo"><a class="anchor" href="#clone-repo"></a>4. Clone the repository</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Clone the workshop repository and move into it.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The application source (<code>app/</code>) and the manifests for every step live in the repository. All commands are run from its root.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git clone "$GIT_REPO_URL" openshift-app-lifecycle-workshop
+cd openshift-app-lifecycle-workshop</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The step directories are present</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ls -d app 1*-*/</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">11-legacy-app/  12-image-hygiene/  13-config-and-secrets/  14-health-and-resources/  15-stateless-and-scale/  16-admission-checklist/  app/</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="create-namespace"><a class="anchor" href="#create-namespace"></a>5. Create the workshop namespace</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create the namespace that holds the reference application.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A namespace is the unit of tenancy on OpenShift: quotas, permissions, network policies and backups are all scoped to it. In later sessions this namespace is created through a pull request instead of by hand.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc create namespace "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The namespace exists and has a UID range assigned</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get namespace "$NS" --context lab \
+  -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}{"\n"}'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">1000680000/10000</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The numbers vary per namespace. This is the range of random UIDs OpenShift picks from when it runs containers in this namespace. It matters in <a href="11-legacy-app.html" class="xref page">Step 1</a>.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Deleting the namespace removes everything created in Session 1, including builds, images in the internal registry for this namespace, and the database volume.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete namespace "$NS" --context lab --ignore-not-found --wait</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="index.html">Overview</a></span>
+  <span class="next"><a href="11-legacy-app.html">Step 1: The Legacy App</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

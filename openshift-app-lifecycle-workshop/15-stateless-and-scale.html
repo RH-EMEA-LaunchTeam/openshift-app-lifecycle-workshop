@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/15-stateless-and-scale.html">
+    <link rel="prev" href="14-health-and-resources.html">
+    <link rel="next" href="16-admission-checklist.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Session 2: Build Pipelines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 1: Onboarding-Ready Applications</li>
+    <li><a href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/15-stateless-and-scale.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Kubernetes is good at running many identical copies of an application, moving them between nodes and replacing them at any time. That only works if any copy can be thrown away without losing anything. <code>notes-app</code> still writes its notes to the container&#8217;s local disk, like it did on its VM. This step shows what goes wrong when you scale such an app, then moves the state to a database so the app becomes disposable: three replicas, shared data, and rolling updates with no downtime.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="14-health-and-resources.html" class="xref page">Step 4</a> completed: probes, resources and namespace guardrails are in place</p>
+</li>
+<li>
+<p><code>$ROUTE</code> set</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+<col style="width: 37.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Where the state lives</th>
+<th class="tableblock halign-left valign-top">What happens when a pod is replaced</th>
+<th class="tableblock halign-left valign-top">Fit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container filesystem</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data is gone</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Never, except for caches and temporary files</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent volume (PVC) attached to the pod</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data survives, but with <code>ReadWriteOnce</code> only one pod can use it, so the app cannot scale out and node failures need a volume re-attach</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Acceptable fallback for apps that cannot change</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External service (database, object storage, queue)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pods hold nothing. Any number of replicas, any node, replaced at any time</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Target pattern</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>In this workshop, a small PostgreSQL instance in the same namespace stands in for a managed database service. In production, the database would usually be provided by a dedicated database team or service, and the application only receives a connection string through a Secret.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="scale-file"><a class="anchor" href="#scale-file"></a>1. Scale with local state</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Scale to three replicas, add six notes, then list the notes several times.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Each pod has its own <code>notes.txt</code>. The router spreads requests across the pods, so every user sees a different, partial list.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc scale deploy/notes-app --replicas=3 -n "$NS" --context lab
+oc rollout status deploy/notes-app -n "$NS" --context lab
+
+for i in 1 2 3 4 5 6; do
+  curl -sk -X POST -H 'Content-Type: application/json' \
+    -d "{\"text\":\"note $i\"}" "https://$ROUTE/api/notes" | jq -r .pod
+done</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The note count depends on which pod answers</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for i in 1 2 3 4 5 6; do
+  curl -sk "https://$ROUTE/api/notes" | jq -r '"\(length) notes"'
+done</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">2 notes
+3 notes
+1 notes
+3 notes
+2 notes
+1 notes</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Your numbers will differ, but they will not all be 6.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="lose-data"><a class="anchor" href="#lose-data"></a>2. Lose data on pod restart</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Delete one pod and check how many notes are left in total.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Pods are replaced all the time: node maintenance, cluster upgrades, rescheduling, new image versions. With local state, every replacement is data loss.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">POD=$(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context lab -o name | head -1)
+oc exec "$POD" -n "$NS" --context lab -- wc -l /opt/app-root/data/notes.txt
+oc delete "$POD" -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The new pod starts empty</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc rollout status deploy/notes-app -n "$NS" --context lab
+for p in $(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context lab -o name); do
+  echo "$p: $(oc exec "$p" -n "$NS" --context lab -- wc -l /opt/app-root/data/notes.txt | awk '{print $1}') notes"
+done</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">pod/notes-app-5f7d9c8b6d-7xk2p: 2 notes
+pod/notes-app-5f7d9c8b6d-q9z4m: 3 notes
+pod/notes-app-5f7d9c8b6d-zt8wd: 0 notes</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The notes stored in the deleted pod are gone for good.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="database"><a class="anchor" href="#database"></a>3. Move state to a database</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (volume provisioning and database initialisation)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Create the database credentials, deploy PostgreSQL, then apply the Deployment that connects to it through <code>DATABASE_URL</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The application already supports a database backend. Moving state out of the pod is a <strong>configuration</strong> change, not a code change. Many vendor applications support an external database in the same way, and it is the first thing to ask a vendor about.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc create secret generic notes-db \
+  --from-literal=username=notes \
+  --from-literal=password="$(openssl rand -hex 12)" \
+  -n "$NS" --context lab
+
+oc apply -f 15-stateless-and-scale/postgresql.yaml -n "$NS" --context lab
+oc rollout status deploy/notes-db -n "$NS" --context lab --timeout=180s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now point the application at the database:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">diff -u 14-health-and-resources/deployment.yaml 15-stateless-and-scale/deployment.yaml
+oc apply -f 15-stateless-and-scale/deployment.yaml -f 15-stateless-and-scale/pdb.yaml -n "$NS" --context lab
+oc rollout status deploy/notes-app -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The PostgreSQL image comes from <code>registry.redhat.io</code>, which requires authentication. OpenShift clusters have a global pull secret for it, so no extra configuration is needed.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: All three pods use PostgreSQL</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n "$NS" --context lab
+for i in 1 2 3; do curl -sk "https://$ROUTE/api/info" | jq -r '"\(.pod) \(.storage)"'; done</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                         READY   STATUS    RESTARTS   AGE
+notes-app-6b8f7d9c5-4kq8x    1/1     Running   0          30s
+notes-app-6b8f7d9c5-mz7tn    1/1     Running   0          25s
+notes-app-6b8f7d9c5-x2wqp    1/1     Running   0          20s
+notes-db-7d8c6b5f4-hk9vl     1/1     Running   0          90s
+notes-app-6b8f7d9c5-x2wqp postgresql
+notes-app-6b8f7d9c5-4kq8x postgresql
+notes-app-6b8f7d9c5-mz7tn postgresql</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="verify-shared"><a class="anchor" href="#verify-shared"></a>4. Verify shared state</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Add six notes, list them from different pods, then delete <strong>all</strong> application pods at once.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the property you want from every app on the platform: any pod can serve any request, and losing every pod loses nothing.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for i in 1 2 3 4 5 6; do
+  curl -sk -X POST -H 'Content-Type: application/json' \
+    -d "{\"text\":\"shared note $i\"}" "https://$ROUTE/api/notes" &gt; /dev/null
+done
+oc delete pods -l app.kubernetes.io/name=notes-app -n "$NS" --context lab
+oc rollout status deploy/notes-app -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Every pod sees all six notes, even after a full restart</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for i in 1 2 3 4 5 6; do
+  curl -sk "https://$ROUTE/api/notes" | jq -r '"\(length) notes"'
+done</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">6 notes
+6 notes
+6 notes
+6 notes
+6 notes
+6 notes</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Open <code><a href="https://$ROUTE" class="bare">https://$ROUTE</a></code> in a browser: each note shows which pod wrote it, and they come from different pods.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="rolling-update"><a class="anchor" href="#rolling-update"></a>5. Zero-downtime rolling update</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~45 seconds</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Send a request every half second while restarting the Deployment, then count the HTTP status codes.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Every monthly patch is a rollout. If rollouts cause errors, teams start avoiding them, and patching slows down. With readiness probes, a <code>preStop</code> delay, <code>maxUnavailable: 0</code> and stateless pods, a rollout is invisible to users.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">( for i in $(seq 1 80); do
+    curl -sk -o /dev/null -w '%{http_code}\n' "https://$ROUTE/api/notes"; sleep 0.5
+  done ) &gt; /tmp/rollout-codes.txt &amp;
+
+oc rollout restart deploy/notes-app -n "$NS" --context lab
+oc rollout status deploy/notes-app -n "$NS" --context lab
+wait
+sort /tmp/rollout-codes.txt | uniq -c</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Only HTTP 200 during the rollout</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">     80 200</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you see a few <code>502</code> or <code>503</code> responses, compare with the Step 4 Deployment (no <code>preStop</code> hook, one replica) to see why each setting matters.</p>
+</div>
+<div class="paragraph">
+<p>The PodDisruptionBudget protects the same property during node drains:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pdb notes-app -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME        MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+notes-app   2               N/A               1                     2m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_4"><a class="anchor" href="#_what_this_solves_compared_to_step_4"></a>What This Solves (Compared to Step 4)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from Step 4</th>
+<th class="tableblock halign-left valign-top">How This Step Solves It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single replica: any not-ready moment is an outage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Three replicas plus a PodDisruptionBudget</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Notes on local disk, lost on every pod replacement</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">State in PostgreSQL, pods are disposable</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rollouts could drop requests</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>maxUnavailable: 0</code>, readiness probe and <code>preStop</code> delay</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The database itself holds state that must be backed up and restored</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Session 5: Backup and Restore</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deciding which of your applications can follow this pattern</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="16-admission-checklist.html" class="xref page">Step 6: Platform Admission Checklist</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/building_applications/deployments">Understanding deployments</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/storage/understanding-persistent-storage">Understanding persistent storage</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/nodes/working-with-pods#nodes-pods-pod-disruption-about_nodes-pods-configuring">Understanding pod disruption budgets</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External database service (this workshop&#8217;s target)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pods are stateless; backup, high availability and patching of the database are handled by a dedicated team or service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Database in the same namespace (this workshop&#8217;s stand-in)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Self-contained and good for test environments. In production the application team then owns database operations, backups included.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Database operator on the platform</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Operators automate high availability, backups and upgrades for databases running on OpenShift. A middle ground when no central database service exists.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PVC on the application pod</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Keeps legacy apps running unchanged, but limits them to one replica and makes upgrades and node maintenance riskier.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Go back to the single-replica Step 4 Deployment first so no pod depends on the database, then remove the PodDisruptionBudget, the database (including its volume) and the credentials.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f 15-stateless-and-scale/pdb.yaml -n "$NS" --context lab --ignore-not-found
+oc apply -f 14-health-and-resources/deployment.yaml -n "$NS" --context lab
+oc rollout status deploy/notes-app -n "$NS" --context lab
+oc delete -f 15-stateless-and-scale/postgresql.yaml -n "$NS" --context lab --ignore-not-found --wait
+oc delete secret notes-db -n "$NS" --context lab --ignore-not-found
+rm -f /tmp/rollout-codes.txt</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="14-health-and-resources.html">Step 4: Health and Resources</a></span>
+  <span class="next"><a href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

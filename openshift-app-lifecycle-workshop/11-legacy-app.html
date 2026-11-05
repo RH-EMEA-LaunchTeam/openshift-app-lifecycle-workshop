@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/11-legacy-app.html">
+    <link rel="prev" href="00-setup.html">
+    <link rel="next" href="12-image-hygiene.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Session 2: Build Pipelines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 1: Onboarding-Ready Applications</li>
+    <li><a href="11-legacy-app.html">Step 1: The Legacy App</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/11-legacy-app.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Most workloads that arrive at a shared platform were never designed for it. They were packaged to run with <code>docker run</code> on a dedicated VM, where the container runs as root, writes wherever it likes, and has its configuration and credentials baked in. This step takes such an image, unchanged, and deploys it on OpenShift so you can see exactly where and why it breaks. Everything later in Session 1 fixes one of these breaks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="00-setup.html" class="xref page">Cluster Setup</a> completed: context <code>lab</code> works, <code>$NS</code> is exported and the namespace exists</p>
+</li>
+<li>
+<p>You are in the root of the cloned repository</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The reference application, <code>notes-app</code>, is a tiny Python web app that shows a greeting and lets you add notes. Its code lives in <code>app/app.py</code>. Two Containerfiles package the same code:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">File</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>app/Containerfile.legacy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How a vendor would package it for a VM. Used in this step.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>app/Containerfile</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The OpenShift-ready version. Used from <a href="12-image-hygiene.html" class="xref page">Step 2</a> onwards.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>You build the image <strong>inside</strong> the cluster with an OpenShift BuildConfig, so you do not need <code>podman</code> or <code>docker</code> on your workstation. The image lands in the cluster&#8217;s internal registry, in an ImageStream called <code>notes-legacy</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="inspect-containerfile"><a class="anchor" href="#inspect-containerfile"></a>1. Inspect the legacy Containerfile</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Read the legacy Containerfile and find the lines marked <code>PROBLEM</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> These are the patterns you will meet over and over again in vendor images. Being able to spot them in 30 seconds is the first skill an onboarding reviewer needs.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat app/Containerfile.legacy</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Count the problems</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -c PROBLEM app/Containerfile.legacy</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">7</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem</th>
+<th class="tableblock halign-left valign-top">Why it matters on a shared platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Hub base image, floating tag</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown provenance, no patch commitment, rate-limited pulls, and the content behind <code>:3.12</code> changes without notice.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Root-owned data directory</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift does not run containers as root, so the app cannot write there.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration baked in</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A different image per environment, which means what you tested is not what you run.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Credential baked in</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Anyone who can pull the image can read the token.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Port 80</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ports below 1024 traditionally need root.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No <code>USER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The image assumes root.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Development server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not built for concurrent production traffic or clean shutdown.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="build-legacy"><a class="anchor" href="#build-legacy"></a>2. Build the legacy image in the cluster</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-2 minutes (base image pull and <code>pip install</code>)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Create an ImageStream and a BuildConfig, then start a binary build that uploads the <code>app/</code> directory.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the simplest way to get a local directory into the cluster&#8217;s registry without a CI system. Session 2 replaces it with a proper pipeline.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 11-legacy-app/build.yaml -n "$NS" --context lab
+oc start-build notes-legacy --from-dir=app --follow -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The legacy image pulls its base from Docker Hub. If the build fails with <code>toomanyrequests</code>, the cluster hit the anonymous Docker Hub pull limit. That is itself a good argument for a central, curated registry. Retry after a few minutes.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: The image is in the internal registry</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get istag notes-legacy:latest -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                  IMAGE REFERENCE                                                                  UPDATED
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy@sha256:...   30 seconds ago</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="deploy-legacy"><a class="anchor" href="#deploy-legacy"></a>3. Deploy it as-is</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~30 seconds (the pod needs a few restarts to reach CrashLoopBackOff)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Deploy the legacy image with a plain Deployment: no probes, no resources, no configuration.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is what "lift and shift" looks like. You want to see the failure with your own eyes before fixing it.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 11-legacy-app/deployment.yaml -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The pod crashes</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                            READY   STATUS             RESTARTS      AGE
+notes-legacy-6d9c7b8f5d-x2kqp   0/1     CrashLoopBackOff   2 (15s ago)   40s</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="diagnose"><a class="anchor" href="#diagnose"></a>4. Diagnose the failure</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Read the logs, then check which user the container actually ran as and which Security Context Constraint (SCC) admitted it.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> "It works on my VM" usually means "it works as root". Knowing how to prove that in under a minute saves hours of back-and-forth with a vendor.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc logs deploy/notes-legacy -n "$NS" --context lab | tail -3</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">    with open(self.path, "a", encoding="utf-8"):
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/data/notes.txt'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now check the SCC and the user ID:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context lab \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
+oc debug deploy/notes-legacy -n "$NS" --context lab -- id</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restricted-v2
+uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Understand what happened</summary>
+<div class="content">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>OpenShift admitted the pod with the default <code>restricted-v2</code> SCC.</p>
+</li>
+<li>
+<p><code>restricted-v2</code> ignores the image&#8217;s assumption of root and runs the process with a <strong>random UID</strong> from the namespace range you saw in <a href="00-setup.html#create-namespace" class="xref page">setup</a>, always with <strong>group 0</strong>.</p>
+</li>
+<li>
+<p><code>/data</code> was created by root during the build and is only writable by root.</p>
+</li>
+<li>
+<p>The app tries to open <code>/data/notes.txt</code> at startup, fails, and exits. Kubernetes restarts it, it fails again: <code>CrashLoopBackOff</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Fixing the data directory would only reveal the next problem: port 80. One problem at a time is exactly how vendor migrations go when nobody has a checklist.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="why-not-anyuid"><a class="anchor" href="#why-not-anyuid"></a>5. Why not just grant anyuid?</h3>
+<div class="paragraph">
+<p><strong>What:</strong> See the one-line "fix" that many teams reach for, and why the platform should not offer it by default. Do not run the command.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The pressure to make it work <strong>now</strong> is real. The platform team needs a clear, explainable answer when someone asks for this.</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># DO NOT RUN - shown for discussion only
+oc adm policy add-scc-to-user anyuid -z default -n "$NS"</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The trade-off</summary>
+<div class="content">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">With anyuid</th>
+<th class="tableblock halign-left valign-top">Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container runs as root (UID 0)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A container escape lands as root on the node, which is shared with every other tenant.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exception per workload</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every exception has to be requested, reviewed, documented and re-reviewed. That does not scale to a hundred workloads.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hides the real problem</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The image stays non-compliant, and the next platform hardening step breaks it again.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The platform rule this leads to is item 1 of the <a href="16-admission-checklist.html" class="xref page">admission checklist</a>: <strong>the image runs as an arbitrary non-root UID in group 0</strong>. Exceptions exist, but they are explicit, time-boxed and owned.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What This Solves</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This step does not solve anything yet. It gives you a baseline and a vocabulary: random UID, group 0, <code>restricted-v2</code>, baked-in configuration. Every following step fixes one of these.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Root assumption, Docker Hub base, port 80, dev server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="12-image-hygiene.html" class="xref page">Step 2: Image Hygiene</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration and token baked into the image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="13-config-and-secrets.html" class="xref page">Step 3: Configuration and Secrets</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No health checks or resource boundaries</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="14-health-and-resources.html" class="xref page">Step 4: Health and Resources</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">State on local disk</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="15-stateless-and-scale.html" class="xref page">Step 5: Stateless and Scalable</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/authentication_and_authorization/managing-pod-security-policies">Managing security context constraints</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/creating-images#use-uid_create-images">Creating images: support arbitrary user IDs</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/builds_using_buildconfig/index">Builds using BuildConfig</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fix the image (this workshop)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Works under the default SCC, no exception to manage, portable to any OpenShift or Kubernetes cluster with Pod Security Admission.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grant <code>anyuid</code> or a custom SCC</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fast, but moves the risk to the shared nodes and creates an exception that has to be governed for the lifetime of the workload. Reserve for the rare cases that genuinely cannot be fixed.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Keep the workload on its VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A valid outcome. Not every workload belongs on the platform; the maturity tiers in <a href="16-admission-checklist.html#maturity-tiers" class="xref page">Step 6</a> make that decision explicit.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Delete the Deployment first so no new pods get created, then the build objects and the ImageStream (which also removes the image from the internal registry).</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f 11-legacy-app/deployment.yaml -n "$NS" --context lab --ignore-not-found
+oc delete -f 11-legacy-app/build.yaml -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Keep the legacy image around if you plan to do <a href="13-config-and-secrets.html#find-token" class="xref page">Step 3</a> and <a href="16-admission-checklist.html#run-check" class="xref page">Step 6</a>, which inspect it again.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="00-setup.html">Cluster Setup</a></span>
+  <span class="next"><a href="12-image-hygiene.html">Step 2: Image Hygiene</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

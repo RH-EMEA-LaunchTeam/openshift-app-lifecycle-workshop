@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/16-admission-checklist.html">
+    <link rel="prev" href="15-stateless-and-scale.html">
+    <link rel="next" href="20-build-pipelines.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Session 2: Build Pipelines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 1: Onboarding-Ready Applications</li>
+    <li><a href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/16-admission-checklist.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Steps 1 to 5 fixed one problem at a time. This step turns those fixes into a short, explicit list of what the platform requires from every application, whoever built it. A clear checklist lets the platform team say "yes", "yes, after these changes" or "not on this platform" quickly and consistently. It can be handed to application owners, used to triage existing workloads, and written into tenders so vendors deliver compliant images from the start.</p>
+</div>
+<div class="paragraph">
+<p>The checklist is deliberately pragmatic. It is a starting point to adapt to your own context, not an ideal-world best-practice list.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="15-stateless-and-scale.html" class="xref page">Step 5</a> completed: the hardened <code>notes-app</code> runs with three replicas and PostgreSQL</p>
+</li>
+<li>
+<p>The <code>notes-legacy</code> ImageStream from <a href="11-legacy-app.html" class="xref page">Step 1</a> still exists</p>
+</li>
+<li>
+<p><code>jq</code> installed</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="checklist"><a class="anchor" href="#checklist"></a>The 10-point checklist</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 9.0909%;">
+<col style="width: 36.3636%;">
+<col style="width: 45.4545%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">Rule</th>
+<th class="tableblock halign-left valign-top">Why the platform needs it</th>
+<th class="tableblock halign-left valign-top">Seen in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Runs as an arbitrary non-root UID.</strong> Files the app writes are owned by group 0 with group permissions equal to owner permissions. No <code>anyuid</code>, privileged or custom SCC.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Shared nodes: a container escape must not land as root. Exceptions do not scale to hundreds of workloads.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="11-legacy-app.html" class="xref page">1</a>, <a href="12-image-hygiene.html" class="xref page">2</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Images come from an approved source.</strong> The base image has a known publisher and patch cadence, and images are pulled through the approved registry.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provenance, vulnerability scanning and the ability to patch. No anonymous Docker Hub pulls.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="12-image-hygiene.html" class="xref page">2</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Images are traceable.</strong> Deployed by digest or immutable tag, with <code>name</code> and <code>version</code> labels.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">You can always answer "what exactly runs in production, and is it patched?"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="12-image-hygiene.html#provenance" class="xref page">2</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>No secrets in images or Git.</strong> Credentials are injected at runtime from Secrets backed by the secret store.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images are copied to many places and cannot be revoked. Leaked credentials must be rotated.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="13-config-and-secrets.html" class="xref page">3</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Configuration is external.</strong> The same image runs in every environment; differences live in ConfigMaps or Secrets.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">What was tested is what runs. Promotion is a configuration change, not a rebuild.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="13-config-and-secrets.html" class="xref page">3</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Health endpoints exist.</strong> Readiness and liveness probes (plus a startup probe for slow starters).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The platform can route around broken pods and restart hung ones without a human.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="14-health-and-resources.html" class="xref page">4</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Resources are declared.</strong> CPU and memory requests and a memory limit, within the namespace quota.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fair scheduling on shared nodes, capacity planning, protection from noisy neighbours.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="14-health-and-resources.html" class="xref page">4</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>State is explicit.</strong> The app is stateless, or its state lives in an external service. A PVC is an exception that comes with a backup and restore plan.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pods are replaced all the time: upgrades, patching, node maintenance.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="15-stateless-and-scale.html" class="xref page">5</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Logs go to stdout and stderr.</strong> No log files inside the container.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The platform collects, filters and forwards logs centrally. Files inside containers are lost and fill the disk.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="15-stateless-and-scale.html" class="xref page">5</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Tolerates restarts and multiple replicas.</strong> Unprivileged ports (1024 and above), handles <code>SIGTERM</code> gracefully, survives losing any single pod.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rolling updates and node drains must be invisible to users. That is what makes monthly patching routine.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="15-stateless-and-scale.html#rolling-update" class="xref page">5</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="run-check"><a class="anchor" href="#run-check"></a>1. Audit a namespace against the checklist</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Redeploy the legacy app next to the hardened one, then run the audit script against the namespace.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Most rules can be checked automatically from what is running. A repeatable check makes triage of many workloads fast and objective, and the same logic can later become an admission policy or a pipeline gate.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 11-legacy-app/deployment.yaml -n "$NS" --context lab
+sleep 20
+./16-admission-checklist/audit-namespace.sh "$NS" lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The legacy app fails, the hardened app passes</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">DEPLOYMENT     #    CHECK                          RES  DETAIL
+------------------------------------------------------------------------------------------
+notes-app      1    Non-root, arbitrary UID        PASS scc=restricted-v2
+notes-app      2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-app
+notes-app      2    Approved base image            PASS registry.access.redhat.com/ubi9/python-312:latest
+notes-app      3    Image pinned by digest         PASS
+notes-app      4    No secrets in manifest         PASS
+notes-app      4    No secrets in image            PASS
+notes-app      6    Health probes                  PASS readiness,liveness
+notes-app      7    Requests and memory limit      PASS req=128Mi lim=256Mi
+notes-app      8    Stateless or explicit state    PASS no volumes (verify the app does not write local state)
+notes-app      10   Unprivileged ports             PASS
+notes-app      10   Survives pod loss (replicas)   PASS replicas=3
+notes-db       ...
+notes-legacy   1    Non-root, arbitrary UID        FAIL pods crash under scc=restricted-v2 (check logs for permission errors)
+notes-legacy   2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy
+notes-legacy   2    Approved base image            FAIL docker.io/library/python:3.12
+notes-legacy   3    Image pinned by digest         WARN template uses a tag: notes-legacy:latest
+notes-legacy   4    No secrets in manifest         PASS
+notes-legacy   4    No secrets in image            FAIL image ENV contains: API_TOKEN
+notes-legacy   6    Health probes                  FAIL none
+notes-legacy   7    Requests and memory limit      FAIL not declared (LimitRange defaults apply)
+notes-legacy   8    Stateless or explicit state    PASS no volumes (verify the app does not write local state)
+notes-legacy   10   Unprivileged ports             FAIL port(s) 80
+notes-legacy   10   Survives pod loss (replicas)   WARN replicas=1
+
+Items 5 (externalised configuration) and 9 (logs to stdout) need a manual review.</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Look at the <code>notes-db</code> rows too: the database is a single replica with a PVC, so it gets warnings on items 8 and 10. That is expected. It is the reason state should live in a service that somebody explicitly owns and backs up.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as <code>notes-legacy</code> does. In Session 7, the same rules become enforced policies in Red Hat Advanced Cluster Security.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="maturity-tiers"><a class="anchor" href="#maturity-tiers"></a>2. Classify workloads into maturity tiers</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Use the checklist result to place each workload into one of three tiers.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> With many workloads to migrate, the question is not "is it perfect?" but "what do we do with it next?". Tiers turn the audit into a migration plan: low-hanging fruit first, then remediation, and an honest "not here" for the rest.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 30%;">
+<col style="width: 30%;">
+<col style="width: 30%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Tier</th>
+<th class="tableblock halign-left valign-top">Criteria</th>
+<th class="tableblock halign-left valign-top">Next action</th>
+<th class="tableblock halign-left valign-top">Typical examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>A - Ready</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Passes all ten rules, or fails only items that can be fixed in the deployment manifest without touching the image: 3, 7, and 6 when the app already has health endpoints.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Onboard now with the standard pattern.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stateless web front ends and APIs, modern vendor images with documented configuration</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>B - Needs work</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fails rules that need changes to the <strong>image or packaging</strong> (1, 2, 4, 5, 9, 10), or needs a PVC (8).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remediation list to the application owner or vendor. Optionally a time-boxed, documented exception.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images that run as root, bake in configuration, or write to fixed paths</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>C - Not a fit (yet)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Needs privileged access, host networking or <code>hostPath</code>, kernel modules, a fixed root UID the vendor will not change, licensing tied to MAC address or hostname, or single-instance local state with no external option.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Keep on a VM, consider running it as a virtual machine on OpenShift Virtualization, or revisit at the next contract renewal.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Appliances, hardware-bound software, legacy monoliths</p></td>
+</tr>
+</tbody>
+</table>
+<details>
+<summary class="title">Verify: Classify the two apps from this session</summary>
+<div class="content">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 16.6666%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Workload</th>
+<th class="tableblock halign-left valign-top">Tier</th>
+<th class="tableblock halign-left valign-top">Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>notes-legacy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Runs as root, Docker Hub base image, token in the image, port 80, local state. All fixable in packaging, as Step 2 to Step 5 proved without changing the code.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>notes-app</code> (hardened)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Passes all automated checks; configuration is external and logs go to stdout.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="tender-wording"><a class="anchor" href="#tender-wording"></a>3. Turn the checklist into requirements for vendors</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Review example wording that turns the checklist into contract or tender requirements.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Most workloads come from third parties. The cheapest moment to get a compliant image is before the contract is signed. It is much harder to change an application once it is delivered.</p>
+</div>
+<details>
+<summary class="title">Example requirement wording (adapt to your procurement language)</summary>
+<div class="content">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 85.7143%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">The supplier shall&#8230;&#8203;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">deliver OCI container images that run as an arbitrary, non-root user ID belonging to group 0, without requiring elevated privileges, privileged security context constraints or a specific user ID.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">build images on a base image from an approved, publicly documented source with a published security update policy, and identify that base image and its version in the delivery documentation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">label every image with at least its name and version, and deliver each release as an immutable, uniquely tagged image.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">not include credentials, certificates, private keys or other secrets in images, source code or deployment manifests; all such values shall be supplied at runtime by the customer.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">support configuration of all environment-specific settings through environment variables or mounted configuration files, so that the same image can be used in all environments.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">provide HTTP or command-based health endpoints that indicate whether the application is alive and whether it is ready to receive traffic.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">document the CPU and memory requirements of each component under expected load.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">document all persistent data, support storing it in an external database or storage service where technically possible, and document the backup and restore procedure.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">write all logs to standard output and standard error.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">support running multiple instances concurrently and rolling updates without data loss, listen on ports 1024 or above, and shut down gracefully on <code>SIGTERM</code> within 30 seconds.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">deliver new images with updated base images within an agreed number of days after a security update to the base image is published.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The last row is not on the checklist, but it is what makes the monthly patch cycle (Session 6) possible for vendor images.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="exercise"><a class="anchor" href="#exercise"></a>4. Exercise: score your own applications</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Take two or three real applications that are candidates for the platform, score them against the checklist, and assign a tier.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the input for the next sessions. Real workloads show which rules hurt in practice, which may need to be relaxed, and which onboarding scenarios the platform must support.</p>
+</div>
+<div class="paragraph">
+<p>Use this table as a template, one row per application:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 17.647%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 5.8823%;">
+<col style="width: 17.6477%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Application</th>
+<th class="tableblock halign-left valign-top">1</th>
+<th class="tableblock halign-left valign-top">2</th>
+<th class="tableblock halign-left valign-top">3</th>
+<th class="tableblock halign-left valign-top">4</th>
+<th class="tableblock halign-left valign-top">5</th>
+<th class="tableblock halign-left valign-top">6</th>
+<th class="tableblock halign-left valign-top">7</th>
+<th class="tableblock halign-left valign-top">8</th>
+<th class="tableblock halign-left valign-top">9</th>
+<th class="tableblock halign-left valign-top">10</th>
+<th class="tableblock halign-left valign-top">Tier</th>
+<th class="tableblock halign-left valign-top">Biggest blocker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>example: vendor scheduling app</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✗</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✗</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✓</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✗</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✓</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✗</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✗</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PVC</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✓</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✗</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Runs as root, writes to <code>/var/lib/app</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<details>
+<summary class="title">Verify: Questions to bring to the next session</summary>
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Which rule did most of your applications fail?</p>
+</li>
+<li>
+<p>Which failures can the platform team fix (manifests), and which need the vendor (image)?</p>
+</li>
+<li>
+<p>Is any rule too strict for your context? What would a documented exception look like, who approves it, and when does it expire?</p>
+</li>
+<li>
+<p>How do your applications get their images today: built in-house, built by a vendor CI, or delivered as image archives? This shapes Session 2.</p>
+</li>
+</ul>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_5"><a class="anchor" href="#_what_this_solves_compared_to_step_5"></a>What This Solves (Compared to Step 5)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem</th>
+<th class="tableblock halign-left valign-top">How This Step Solves It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fixes were applied one by one, with no shared standard</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One written checklist that applies to every workload</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No objective way to triage many workloads</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Automated audit plus maturity tiers</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vendors deliver whatever they are used to</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Requirement wording for tenders and contracts</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images are built by hand from a laptop</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="20-build-pipelines.html" class="xref page">Session 2: Build Pipelines</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Namespaces, quotas and deployments are created by hand</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="30-gitops-deploy.html" class="xref page">Session 3: GitOps Deployment</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The checklist is checked, not enforced</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="70-secure-operations.html" class="xref page">Session 7: Secure Operations</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/creating-images">Creating images: general and OpenShift-specific guidelines</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/authentication_and_authorization/managing-pod-security-policies">Managing security context constraints</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/virtualization/about">About OpenShift Virtualization</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Short pragmatic checklist plus tiers (this workshop)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Easy to communicate to application owners and vendors, quick to apply, and leaves room for documented exceptions.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Full best-practice framework (for example the twelve-factor app)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A useful background reference, but too broad for contract language and triage. Most rules here are a subset of it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enforce everything at admission from day one</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Strongest guarantee, but blocks migration of existing workloads before they can be remediated. Better introduced gradually: inform, then warn, then enforce.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Remove the legacy Deployment that was redeployed for the audit. Everything else stays in place for the next session.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f 11-legacy-app/deployment.yaml -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To remove <strong>everything</strong> from Session 1, delete the namespace as described in <a href="00-setup.html" class="xref page">Cluster Setup</a>.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a></span>
+  <span class="next"><a href="20-build-pipelines.html">Session 2: Build Pipelines</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

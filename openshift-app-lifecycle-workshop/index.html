@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/index.html">
+    <link rel="next" href="00-setup.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Session 2: Build Pipelines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link is-current"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li><a href="index.html">Overview</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/index.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div class="sect1 text-center strong">
+<h2>From "docker run on a VM" to a repeatable, monthly application lifecycle on OpenShift</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This workshop series follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image every month, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster, followed by two days of hands-on access so the team can repeat every step without fear of breaking anything.</p>
+</div>
+<div class="paragraph">
+<p>The series is written for platform teams that are bringing many existing container workloads, often built by third-party vendors and running with <code>docker</code> or <code>podman</code> on standalone VMs, onto a shared OpenShift platform.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. The lifecycle this series proves end to end</caption>
+<colgroup>
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Build</th>
+<th class="tableblock halign-left valign-top">Deploy</th>
+<th class="tableblock halign-left valign-top">Run</th>
+<th class="tableblock halign-left valign-top">Backup</th>
+<th class="tableblock halign-left valign-top">Patch</th>
+<th class="tableblock halign-left valign-top">Redeploy</th>
+<th class="tableblock halign-left valign-top">Verify</th>
+<th class="tableblock halign-left valign-top">Restore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">source to image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GitOps</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">logs and metrics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">app and data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">base image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">verified rollout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">security and ops</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">documented test</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1 tiles browse">
+<h2>Session 1: Onboarding-Ready Applications</h2>
+<div class="sectionbody">
+<div class="ulist tile">
+<div class="title"><a href="00-setup.html" class="xref page">Cluster setup</a></div>
+<ul>
+<li>
+<p><a href="00-setup.html#prerequisites" class="xref page">Prerequisites</a></p>
+</li>
+<li>
+<p><a href="00-setup.html#export-variables" class="xref page">Export variables</a></p>
+</li>
+<li>
+<p><a href="00-setup.html#create-namespace" class="xref page">Create the namespace</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="11-legacy-app.html" class="xref page">Step 1: The legacy app</a></div>
+<ul>
+<li>
+<p><a href="11-legacy-app.html#build-legacy" class="xref page">Build the VM image</a></p>
+</li>
+<li>
+<p><a href="11-legacy-app.html#deploy-legacy" class="xref page">Deploy it as-is</a></p>
+</li>
+<li>
+<p><a href="11-legacy-app.html#diagnose" class="xref page">Why it fails</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="12-image-hygiene.html" class="xref page">Step 2: Image hygiene</a></div>
+<ul>
+<li>
+<p><a href="12-image-hygiene.html#compare-containerfiles" class="xref page">UBI and non-root</a></p>
+</li>
+<li>
+<p><a href="12-image-hygiene.html#deploy-hardened" class="xref page">Run under restricted-v2</a></p>
+</li>
+<li>
+<p><a href="12-image-hygiene.html#provenance" class="xref page">Labels and digests</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="13-config-and-secrets.html" class="xref page">Step 3: Config and secrets</a></div>
+<ul>
+<li>
+<p><a href="13-config-and-secrets.html#find-token" class="xref page">Tokens baked in images</a></p>
+</li>
+<li>
+<p><a href="13-config-and-secrets.html#configmap" class="xref page">ConfigMaps</a></p>
+</li>
+<li>
+<p><a href="13-config-and-secrets.html#secret" class="xref page">Secrets</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="14-health-and-resources.html" class="xref page">Step 4: Health and resources</a></div>
+<ul>
+<li>
+<p><a href="14-health-and-resources.html#tenant-guardrails" class="xref page">Quotas and limits</a></p>
+</li>
+<li>
+<p><a href="14-health-and-resources.html#probes-resources" class="xref page">Probes</a></p>
+</li>
+<li>
+<p><a href="14-health-and-resources.html#break-readiness" class="xref page">Readiness in action</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="15-stateless-and-scale.html" class="xref page">Step 5: Stateless and scalable</a></div>
+<ul>
+<li>
+<p><a href="15-stateless-and-scale.html#lose-data" class="xref page">The cost of local state</a></p>
+</li>
+<li>
+<p><a href="15-stateless-and-scale.html#database" class="xref page">State in a database</a></p>
+</li>
+<li>
+<p><a href="15-stateless-and-scale.html#rolling-update" class="xref page">Zero-downtime updates</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="16-admission-checklist.html" class="xref page">Step 6: Admission checklist</a></div>
+<ul>
+<li>
+<p><a href="16-admission-checklist.html#checklist" class="xref page">10-point checklist</a></p>
+</li>
+<li>
+<p><a href="16-admission-checklist.html#maturity-tiers" class="xref page">Maturity tiers</a></p>
+</li>
+<li>
+<p><a href="16-admission-checklist.html#tender-wording" class="xref page">Tender wording</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1 tiles browse">
+<h2>Upcoming Sessions</h2>
+<div class="sectionbody">
+<div class="ulist tile">
+<div class="title"><a href="20-build-pipelines.html" class="xref page">Session 2: Build pipelines</a></div>
+<ul>
+<li>
+<p>Tekton: source to image</p>
+</li>
+<li>
+<p>Scan and push</p>
+</li>
+<li>
+<p>Importing vendor images</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="30-gitops-deploy.html" class="xref page">Session 3: GitOps deployment</a></div>
+<ul>
+<li>
+<p>Tenant onboarding by pull request</p>
+</li>
+<li>
+<p>Kustomize overlays</p>
+</li>
+<li>
+<p>Promotion between environments</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="40-observe.html" class="xref page">Session 4: Run and observe</a></div>
+<ul>
+<li>
+<p>User workload monitoring</p>
+</li>
+<li>
+<p>Alerts</p>
+</li>
+<li>
+<p>Log filtering and forwarding</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="50-backup-restore.html" class="xref page">Session 5: Backup and restore</a></div>
+<ul>
+<li>
+<p>OADP backup of app and data</p>
+</li>
+<li>
+<p>Restore test</p>
+</li>
+<li>
+<p>Runbook evidence</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="60-monthly-patching.html" class="xref page">Session 6: Monthly patch cycle</a></div>
+<ul>
+<li>
+<p>Base image update</p>
+</li>
+<li>
+<p>Rebuild, scan, redeploy</p>
+</li>
+<li>
+<p>Ownership model</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="70-secure-operations.html" class="xref page">Session 7: Secure operations</a></div>
+<ul>
+<li>
+<p>Security policies</p>
+</li>
+<li>
+<p>Admission control</p>
+</li>
+<li>
+<p>Image age and CVEs</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="80-fleet-environments.html" class="xref page">Session 8: Fleet and environments</a></div>
+<ul>
+<li>
+<p>Governance policies</p>
+</li>
+<li>
+<p>Environment strategy</p>
+</li>
+<li>
+<p>Argo CD topology</p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="90-capstone.html" class="xref page">Session 9: Capstone</a></div>
+<ul>
+<li>
+<p>The full monthly cycle</p>
+</li>
+<li>
+<p>End to end, repeatable</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2>Environment</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Item</th>
+<th class="tableblock halign-left valign-top">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift version</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.16+</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clusters</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One throwaway OpenShift cluster from the Red Hat Demo Platform (context <code>lab</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reference application</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>notes-app</code>, a small Python web application (source in <code>app/</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Base image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>registry.access.redhat.com/ubi9/python-312</code> (Red Hat Universal Base Image 9)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<nav class="pagination">
+  <span class="next"><a href="00-setup.html">Cluster Setup</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
