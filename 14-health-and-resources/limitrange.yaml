@@ -1,0 +1,21 @@
+# limitrange.yaml
+# Purpose: Platform-side guardrail. Gives every container default requests and
+#          limits if the application team forgot them, and caps the maximum.
+#          The 1Gi default limit leaves room for in-namespace image builds.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tenant-defaults
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 50m
+        memory: 128Mi
+      default:
+        memory: 1Gi
+      max:
+        cpu: "2"
+        memory: 2Gi

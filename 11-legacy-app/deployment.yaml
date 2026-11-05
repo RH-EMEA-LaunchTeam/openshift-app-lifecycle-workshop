@@ -1,0 +1,28 @@
+# deployment.yaml
+# Purpose: Run the legacy image exactly as it ran on the VM.
+#          No probes, no resources, no config injection - on purpose.
+#          Expected result on OpenShift: CrashLoopBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-legacy
+  labels:
+    app.kubernetes.io/name: notes-legacy
+    app.kubernetes.io/part-of: notes-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-legacy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notes-legacy
+        app.kubernetes.io/part-of: notes-app
+    spec:
+      containers:
+        - name: notes-legacy
+          # Resolved to the internal registry through the ImageStream lookup policy
+          image: notes-legacy:latest
+          ports:
+            - containerPort: 80

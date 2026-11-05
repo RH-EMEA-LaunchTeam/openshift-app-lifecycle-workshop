@@ -1,0 +1,77 @@
+name: docs-preview
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+      - gh-pages
+  delete:
+
+permissions:
+  contents: write
+
+env:
+  SITE_DIR: "gh-pages"
+
+jobs:
+  build_and_deploy_preview:
+    name: "Build and deploy branch preview"
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine branch slug
+        id: branch
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          BRANCH_SLUG=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "slug=$BRANCH_SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: Patch site.yml for preview path
+        run: |
+          PREVIEW_URL="${{ github.event.repository.homepage || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}/pr/${{ steps.branch.outputs.slug }}"
+          sed -i "/^site:/,/^[^ ]/{s|url:.*|url: ${PREVIEW_URL}|}" site.yml
+          echo "Patched site.yml:" && grep 'url:' site.yml
+
+      - name: "Generate site using antora site action"
+        uses: kameshsampath/antora-site-action@master
+        with:
+          antora_playbook: site.yml
+
+      - name: Deploy to GitHub Pages subdirectory
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ${{ env.SITE_DIR }}
+          branch: gh-pages
+          target-folder: pr/${{ steps.branch.outputs.slug }}
+          commit-message: "[CI] Preview for branch ${{ steps.branch.outputs.slug }} (${{ github.sha }})"
+
+  cleanup_preview:
+    name: "Clean up branch preview"
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Determine branch slug
+        id: branch
+        run: |
+          BRANCH_NAME="${{ github.event.ref }}"
+          BRANCH_SLUG=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "slug=$BRANCH_SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: Remove preview directory
+        run: |
+          if [ -d "pr/${{ steps.branch.outputs.slug }}" ]; then
+            git rm -rf "pr/${{ steps.branch.outputs.slug }}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "[CI] Remove preview for deleted branch ${{ steps.branch.outputs.slug }}"
+            git push
+          fi

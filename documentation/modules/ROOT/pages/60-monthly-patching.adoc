@@ -1,0 +1,39 @@
+= Session 6 - Monthly Patch Cycle: Base Image to Production Without Manual Steps
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Make the monthly base image update a routine: detect a new base image, rebuild, scan, redeploy through GitOps and verify, with clear ownership between platform and application teams.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Patch and Redeploy
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Track which base image digest every workload runs
+. Detect a newer base image and trigger a rebuild automatically
+. Scan the new image and compare vulnerabilities with the running one
+. Promote the new digest through Git and roll out with zero downtime
+. Verify, and roll back if needed
+. Define who patches what: platform-built images, vendor images and the cluster itself
+
+== What the session leaves behind
+
+* A documented monthly patch workflow
+* A responsibility split between platform and application teams
+
+== Questions to prepare
+
+* What is the required patch cadence, and what evidence must be produced?
+* How quickly must vendors deliver patched images?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/triggering-updates-on-imagestream-changes[Triggering updates on image stream changes]

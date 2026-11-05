@@ -1,0 +1,35 @@
+# build.yaml
+# Purpose: ImageStream + BuildConfig for the OpenShift-ready image built from
+#          app/Containerfile (UBI base, non-root, port 8080, labels).
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Containerfile
+      buildArgs:
+        - name: APP_VERSION
+          value: "1.0"
+  output:
+    to:
+      kind: ImageStreamTag
+      name: notes-app:latest

@@ -1,0 +1,40 @@
+= Session 2 - Build Pipelines: From Source to a Scanned Image
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Replace the manual `oc start-build` from Session 1 with a repeatable OpenShift Pipelines (Tekton) pipeline, and define how third-party images enter the platform.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Build
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Install OpenShift Pipelines and explore Tasks, Pipelines and PipelineRuns
+. Build `notes-app` from Git: clone, build with Buildah, push to the registry
+. Add an image scan step and fail the pipeline on critical vulnerabilities
+. Trigger the pipeline on a Git push with a webhook
+. Import a vendor-delivered image: pull, scan, retag and promote into the approved registry
+. Offer the pipeline as a reusable template for tenants (pipeline as a service)
+
+== What the session leaves behind
+
+* A reference pipeline tenants can reuse
+* A documented path for third-party images into the approved registry
+
+== Questions to prepare
+
+* Which registry will be the long-term source of truth for images, and how does it relate to the cluster's internal registry?
+* Do vendors deliver source, Containerfiles, images or image archives?
+* Who owns the pipeline definitions: the platform team or the tenants?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[OpenShift Pipelines]

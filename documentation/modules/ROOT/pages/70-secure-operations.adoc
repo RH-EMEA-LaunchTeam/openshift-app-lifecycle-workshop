@@ -1,0 +1,39 @@
+= Session 7 - Secure Operations: From Checklist to Enforced Policy
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Turn the Session 1 admission checklist into policies that are reported, then enforced, and feed relevant security signals to the central security tooling.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Verify
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Install Red Hat Advanced Cluster Security and secure the workshop cluster
+. Review vulnerabilities and image age for `notes-app` and `notes-legacy`
+. Express checklist rules as policies: inform, then enforce at deploy time
+. Add an image check to the build pipeline from Session 2
+. Send violations to the central security tooling
+. Define the daily security workflow for the platform team
+
+== What the session leaves behind
+
+* A starter policy set mapped to the admission checklist
+* A daily security operations workflow
+
+== Questions to prepare
+
+* Which security tooling must receive signals, and which signals are relevant?
+* Who acts on a policy violation?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/[Red Hat Advanced Cluster Security]

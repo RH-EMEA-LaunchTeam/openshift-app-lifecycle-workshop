@@ -1,0 +1,39 @@
+= Session 5 - Backup and Restore: Proving Recovery, Not Just Running Backups
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Back up `notes-app` together with its data, restore it into a new namespace, and turn the procedure into a runbook with evidence.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Backup and Restore
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Install and configure OADP with an object storage location
+. Back up the namespace, including persistent volume data
+. Schedule recurring backups with a retention policy
+. Simulate data loss and restore into a new namespace
+. Verify the restored application and data, and record the evidence
+. Discuss what GitOps already recovers and what only a backup can recover
+
+== What the session leaves behind
+
+* A restore runbook
+* Evidence from a restore test
+
+== Questions to prepare
+
+* What recovery time and recovery point objectives apply to platform workloads?
+* Where can backup data be stored?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/backup_and_restore/oadp-application-backup-and-restore[OADP]

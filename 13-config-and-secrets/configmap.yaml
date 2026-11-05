@@ -1,0 +1,14 @@
+# configmap.yaml
+# Purpose: Non-sensitive, environment-specific settings for notes-app.
+#          One ConfigMap per environment; the image stays identical.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notes-app-config
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+data:
+  APP_GREETING: "Hello from OpenShift"
+  APP_ENV: "workshop"
+  LOG_LEVEL: "INFO"

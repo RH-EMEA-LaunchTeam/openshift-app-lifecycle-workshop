@@ -1,0 +1,307 @@
+= Step 4 - Health and Resources: Telling the Platform What the App Needs
+include::_attributes.adoc[]
+
+On a VM, the application has the whole machine to itself and somebody notices when it hangs. On a shared platform, the scheduler has to know how much CPU and memory each pod needs, and the platform has to know whether each pod is alive and ready for traffic. This step adds both, from two sides: the *platform team* sets guardrails on the namespace (LimitRange and ResourceQuota), and the *application* declares its own requests, limits and health probes.
+
+== Prerequisites
+
+* xref:13-config-and-secrets.adoc[Step 3] completed: `notes-app` runs with its ConfigMap and Secret
+* `$ROUTE` set
+
+== How It Works
+
+[cols="2,2,4",options="header"]
+|===
+| Object | Owner | Purpose
+
+| ResourceQuota
+| Platform team
+| Caps the total CPU, memory, storage and pod count for the whole namespace
+
+| LimitRange
+| Platform team
+| Gives containers default requests and limits if they declare none, and enforces a maximum
+
+| Requests and limits
+| Application
+| Requests: what the scheduler reserves. Memory limit: the pod is killed (OOMKilled) above it.
+
+| Startup probe
+| Application
+| Gives slow-starting apps time before liveness checks begin
+
+| Liveness probe
+| Application
+| "Is the process stuck?" Fails: the container is *restarted*.
+
+| Readiness probe
+| Application
+| "Can I take traffic right now?" Fails: the pod is *removed from the Service*, but not restarted.
+|===
+
+`notes-app` exposes `/healthz/live` (always OK while the process runs) and `/healthz/ready` (OK only when its storage is writable or reachable).
+
+== Steps to Apply
+
+[#tenant-guardrails]
+=== 1. Apply the platform guardrails
+
+*What:* Apply a LimitRange and a ResourceQuota to the namespace.
+
+*Why:* These belong to the platform team, not the application. In Session 3 they are part of the namespace template that every tenant gets through a pull request.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 14-health-and-resources/limitrange.yaml -f 14-health-and-resources/resourcequota.yaml \
+  -n "$NS" --context {lab-context}
+----
+
+.Verify: Quota usage is tracked
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc describe resourcequota tenant-quota -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+Name:                   tenant-quota
+Namespace:              app-lifecycle
+Resource                Used  Hard
+--------                ----  ----
+limits.memory           0     8Gi
+persistentvolumeclaims  0     5
+pods                    1     20
+requests.cpu            0     2
+requests.memory         0     4Gi
+requests.storage        0     20Gi
+----
+
+The running pod was created before the quota existed, so it uses no requests yet. The numbers update as soon as the pod is replaced in the next sub-step.
+====
+
+'''
+
+[#probes-resources]
+=== 2. Add probes and resources to the Deployment
+
+icon:clock[] ~20 seconds
+
+*What:* Apply the Deployment with requests, a memory limit, startup, liveness and readiness probes and a termination grace period.
+
+*Why:* Without requests the scheduler cannot place pods sensibly. Without probes, a hung or not-yet-ready pod still receives traffic.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+diff -u 13-config-and-secrets/deployment.yaml 14-health-and-resources/deployment.yaml
+oc apply -f 14-health-and-resources/deployment.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+----
+
+NOTE: There is no CPU limit on purpose. A CPU limit throttles the app even when the node has idle CPU. A memory limit is still important because memory cannot be throttled, only reclaimed by killing the process.
+
+.Verify: Probes are configured and passing
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc describe pod -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} | grep -E 'Liveness|Readiness|Startup|Requests|Limits' -A2 | head -20
+oc describe resourcequota tenant-quota -n "$NS" --context {lab-context} | grep -E 'requests|limits'
+----
+
+[.console-output]
+[source,bash]
+----
+    Limits:
+      memory:  256Mi
+    Requests:
+      cpu:      50m
+      memory:   128Mi
+    Liveness:   http-get http://:http/healthz/live delay=0s timeout=1s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:http/healthz/ready delay=0s timeout=1s period=5s #success=1 #failure=2
+    Startup:    http-get http://:http/healthz/live delay=0s timeout=1s period=2s #success=1 #failure=30
+limits.memory           256Mi  8Gi
+requests.cpu            50m    2
+requests.memory         128Mi  4Gi
+----
+====
+
+'''
+
+[#break-readiness]
+=== 3. Break readiness on purpose
+
+icon:clock[] ~15 seconds (two failed readiness checks, 5 seconds apart)
+
+*What:* Make the app's data file read-only inside the running container, watch the pod become not ready, then fix it.
+
+*Why:* This shows the difference between readiness and liveness in practice: the pod stops receiving traffic but is *not* restarted, so it can recover on its own.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc exec deploy/notes-app -n "$NS" --context {lab-context} -- chmod a-w /opt/app-root/data/notes.txt
+sleep 15
+oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context}
+curl -sk -o /dev/null -w '%\{http_code}\n' "https://$ROUTE/"
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                         READY   STATUS    RESTARTS   AGE
+notes-app-5f7d9c8b6d-k8w2n   0/1     Running   0          2m
+503
+----
+
+Now repair it:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc exec deploy/notes-app -n "$NS" --context {lab-context} -- chmod u+w /opt/app-root/data/notes.txt
+sleep 10
+oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context}
+----
+
+.Verify: The pod recovered without a restart
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME                         READY   STATUS    RESTARTS   AGE
+notes-app-5f7d9c8b6d-k8w2n   1/1     Running   0          2m30s
+----
+
+`RESTARTS` is still `0`. With a single replica, the whole app was unavailable while the pod was not ready. Step 5 fixes that with more replicas.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get events -n "$NS" --context {lab-context} --field-selector reason=Unhealthy | tail -3
+----
+====
+
+'''
+
+[#defaults]
+=== 4. See the defaults in action
+
+*What:* Start a pod that declares no resources at all and check what it received.
+
+*Why:* Vendors often ship manifests without resources. The LimitRange makes sure those pods still get sensible values and still count against the quota.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc run no-resources --image=registry.access.redhat.com/ubi9/ubi-minimal \
+  -n "$NS" --context {lab-context} --command -- sleep 3600
+oc get pod no-resources -n "$NS" --context {lab-context} -o jsonpath='{.spec.containers[0].resources}' | jq
+----
+
+.Verify: The LimitRange filled in the gaps
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{
+  "limits": {
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "50m",
+    "memory": "128Mi"
+  }
+}
+----
+
+Clean up the test pod:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete pod no-resources -n "$NS" --context {lab-context} --ignore-not-found
+----
+====
+
+'''
+
+== What This Solves (Compared to Step 3)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 3 | How This Step Solves It
+
+| Broken pods still receive traffic
+| Readiness probe removes them from the Service
+
+| Hung processes stay hung
+| Liveness probe restarts them
+
+| The scheduler does not know what the app needs
+| Requests and memory limit
+
+| One tenant can starve the cluster
+| ResourceQuota and LimitRange on the namespace
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| A single replica means any not-ready moment is an outage
+| xref:15-stateless-and-scale.adoc[Step 5: Stateless and Scalable]
+
+| Notes live on the container's local disk
+| xref:15-stateless-and-scale.adoc[Step 5: Stateless and Scalable]
+
+| Nobody is alerted when probes fail
+| Session 4: Run and Observe
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/building_applications/application-health[Monitoring application health by using health checks]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/building_applications/quotas[Quotas]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/nodes/working-with-clusters#nodes-cluster-limit-ranges[Restricting resource consumption with limit ranges]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Requests plus memory limit, no CPU limit (this workshop)
+| Good default for most web workloads: predictable scheduling, no CPU throttling.
+
+| Requests equal to limits (Guaranteed QoS)
+| Most predictable, least efficient. Useful for latency-sensitive or licensed workloads.
+
+| No requests at all
+| Pods become BestEffort and are the first to be evicted under pressure. Not acceptable on a shared platform; the LimitRange prevents it.
+|===
+
+'''
+
+== Reset
+
+Revert the Deployment first, then remove the guardrails (the quota last, so nothing gets created without limits in between).
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete pod no-resources -n "$NS" --context {lab-context} --ignore-not-found
+oc apply -f 13-config-and-secrets/deployment.yaml -n "$NS" --context {lab-context}
+oc delete -f 14-health-and-resources/limitrange.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 14-health-and-resources/resourcequota.yaml -n "$NS" --context {lab-context} --ignore-not-found
+----

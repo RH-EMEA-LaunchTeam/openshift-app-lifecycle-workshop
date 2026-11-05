@@ -1,0 +1,90 @@
+# postgresql.yaml
+# Purpose: A small PostgreSQL instance that stands in for a managed database
+#          service. Credentials come from the notes-db Secret (created with
+#          "oc create secret", never stored in Git).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notes-db
+  labels:
+    app.kubernetes.io/name: notes-db
+    app.kubernetes.io/part-of: notes-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-db
+  labels:
+    app.kubernetes.io/name: notes-db
+    app.kubernetes.io/part-of: notes-app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # RWO volume: never run two database pods at once
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notes-db
+        app.kubernetes.io/part-of: notes-app
+    spec:
+      containers:
+        - name: postgresql
+          image: registry.redhat.io/rhel9/postgresql-16:latest
+          ports:
+            - name: postgresql
+              containerPort: 5432
+          env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef: {name: notes-db, key: username}
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: notes-db, key: password}
+            - name: POSTGRESQL_DATABASE
+              value: notes
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ["/usr/libexec/check-container"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["/usr/libexec/check-container", "--live"]
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/pgsql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: notes-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-db
+  labels:
+    app.kubernetes.io/name: notes-db
+    app.kubernetes.io/part-of: notes-app
+spec:
+  selector:
+    app.kubernetes.io/name: notes-db
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql

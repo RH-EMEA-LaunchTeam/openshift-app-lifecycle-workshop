@@ -1,0 +1,331 @@
+= Step 6 - Platform Admission Checklist: Ten Rules Every App Must Meet
+include::_attributes.adoc[]
+
+Steps 1 to 5 fixed one problem at a time. This step turns those fixes into a short, explicit list of what the platform requires from every application, whoever built it. A clear checklist lets the platform team say "yes", "yes, after these changes" or "not on this platform" quickly and consistently. It can be handed to application owners, used to triage existing workloads, and written into tenders so vendors deliver compliant images from the start.
+
+The checklist is deliberately pragmatic. It is a starting point to adapt to your own context, not an ideal-world best-practice list.
+
+== Prerequisites
+
+* xref:15-stateless-and-scale.adoc[Step 5] completed: the hardened `notes-app` runs with three replicas and PostgreSQL
+* The `notes-legacy` ImageStream from xref:11-legacy-app.adoc[Step 1] still exists
+* `jq` installed
+
+[#checklist]
+== The 10-point checklist
+
+[cols="1,4,5,1",options="header"]
+|===
+| # | Rule | Why the platform needs it | Seen in
+
+| 1
+| *Runs as an arbitrary non-root UID.* Files the app writes are owned by group 0 with group permissions equal to owner permissions. No `anyuid`, privileged or custom SCC.
+| Shared nodes: a container escape must not land as root. Exceptions do not scale to hundreds of workloads.
+| xref:11-legacy-app.adoc[1], xref:12-image-hygiene.adoc[2]
+
+| 2
+| *Images come from an approved source.* The base image has a known publisher and patch cadence, and images are pulled through the approved registry.
+| Provenance, vulnerability scanning and the ability to patch. No anonymous Docker Hub pulls.
+| xref:12-image-hygiene.adoc[2]
+
+| 3
+| *Images are traceable.* Deployed by digest or immutable tag, with `name` and `version` labels.
+| You can always answer "what exactly runs in production, and is it patched?"
+| xref:12-image-hygiene.adoc#provenance[2]
+
+| 4
+| *No secrets in images or Git.* Credentials are injected at runtime from Secrets backed by the secret store.
+| Images are copied to many places and cannot be revoked. Leaked credentials must be rotated.
+| xref:13-config-and-secrets.adoc[3]
+
+| 5
+| *Configuration is external.* The same image runs in every environment; differences live in ConfigMaps or Secrets.
+| What was tested is what runs. Promotion is a configuration change, not a rebuild.
+| xref:13-config-and-secrets.adoc[3]
+
+| 6
+| *Health endpoints exist.* Readiness and liveness probes (plus a startup probe for slow starters).
+| The platform can route around broken pods and restart hung ones without a human.
+| xref:14-health-and-resources.adoc[4]
+
+| 7
+| *Resources are declared.* CPU and memory requests and a memory limit, within the namespace quota.
+| Fair scheduling on shared nodes, capacity planning, protection from noisy neighbours.
+| xref:14-health-and-resources.adoc[4]
+
+| 8
+| *State is explicit.* The app is stateless, or its state lives in an external service. A PVC is an exception that comes with a backup and restore plan.
+| Pods are replaced all the time: upgrades, patching, node maintenance.
+| xref:15-stateless-and-scale.adoc[5]
+
+| 9
+| *Logs go to stdout and stderr.* No log files inside the container.
+| The platform collects, filters and forwards logs centrally. Files inside containers are lost and fill the disk.
+| xref:15-stateless-and-scale.adoc[5]
+
+| 10
+| *Tolerates restarts and multiple replicas.* Unprivileged ports (1024 and above), handles `SIGTERM` gracefully, survives losing any single pod.
+| Rolling updates and node drains must be invisible to users. That is what makes monthly patching routine.
+| xref:15-stateless-and-scale.adoc#rolling-update[5]
+|===
+
+== Steps to Apply
+
+[#run-check]
+=== 1. Audit a namespace against the checklist
+
+*What:* Redeploy the legacy app next to the hardened one, then run the audit script against the namespace.
+
+*Why:* Most rules can be checked automatically from what is running. A repeatable check makes triage of many workloads fast and objective, and the same logic can later become an admission policy or a pipeline gate.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 11-legacy-app/deployment.yaml -n "$NS" --context {lab-context}
+sleep 20
+./16-admission-checklist/audit-namespace.sh "$NS" {lab-context}
+----
+
+.Verify: The legacy app fails, the hardened app passes
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+DEPLOYMENT     #    CHECK                          RES  DETAIL
+------------------------------------------------------------------------------------------
+notes-app      1    Non-root, arbitrary UID        PASS scc=restricted-v2
+notes-app      2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-app
+notes-app      2    Approved base image            PASS registry.access.redhat.com/ubi9/python-312:latest
+notes-app      3    Image pinned by digest         PASS
+notes-app      4    No secrets in manifest         PASS
+notes-app      4    No secrets in image            PASS
+notes-app      6    Health probes                  PASS readiness,liveness
+notes-app      7    Requests and memory limit      PASS req=128Mi lim=256Mi
+notes-app      8    Stateless or explicit state    PASS no volumes (verify the app does not write local state)
+notes-app      10   Unprivileged ports             PASS
+notes-app      10   Survives pod loss (replicas)   PASS replicas=3
+notes-db       ...
+notes-legacy   1    Non-root, arbitrary UID        FAIL pods crash under scc=restricted-v2 (check logs for permission errors)
+notes-legacy   2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy
+notes-legacy   2    Approved base image            FAIL docker.io/library/python:3.12
+notes-legacy   3    Image pinned by digest         WARN template uses a tag: notes-legacy:latest
+notes-legacy   4    No secrets in manifest         PASS
+notes-legacy   4    No secrets in image            FAIL image ENV contains: API_TOKEN
+notes-legacy   6    Health probes                  FAIL none
+notes-legacy   7    Requests and memory limit      FAIL not declared (LimitRange defaults apply)
+notes-legacy   8    Stateless or explicit state    PASS no volumes (verify the app does not write local state)
+notes-legacy   10   Unprivileged ports             FAIL port(s) 80
+notes-legacy   10   Survives pod loss (replicas)   WARN replicas=1
+
+Items 5 (externalised configuration) and 9 (logs to stdout) need a manual review.
+----
+
+Look at the `notes-db` rows too: the database is a single replica with a PVC, so it gets warnings on items 8 and 10. That is expected. It is the reason state should live in a service that somebody explicitly owns and backs up.
+
+NOTE: The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as `notes-legacy` does. In Session 7, the same rules become enforced policies in Red Hat Advanced Cluster Security.
+====
+
+'''
+
+[#maturity-tiers]
+=== 2. Classify workloads into maturity tiers
+
+*What:* Use the checklist result to place each workload into one of three tiers.
+
+*Why:* With many workloads to migrate, the question is not "is it perfect?" but "what do we do with it next?". Tiers turn the audit into a migration plan: low-hanging fruit first, then remediation, and an honest "not here" for the rest.
+
+[cols="1,3,3,3",options="header"]
+|===
+| Tier | Criteria | Next action | Typical examples
+
+| *A - Ready*
+| Passes all ten rules, or fails only items that can be fixed in the deployment manifest without touching the image: 3, 7, and 6 when the app already has health endpoints.
+| Onboard now with the standard pattern.
+| Stateless web front ends and APIs, modern vendor images with documented configuration
+
+| *B - Needs work*
+| Fails rules that need changes to the *image or packaging* (1, 2, 4, 5, 9, 10), or needs a PVC (8).
+| Remediation list to the application owner or vendor. Optionally a time-boxed, documented exception.
+| Images that run as root, bake in configuration, or write to fixed paths
+
+| *C - Not a fit (yet)*
+| Needs privileged access, host networking or `hostPath`, kernel modules, a fixed root UID the vendor will not change, licensing tied to MAC address or hostname, or single-instance local state with no external option.
+| Keep on a VM, consider running it as a virtual machine on OpenShift Virtualization, or revisit at the next contract renewal.
+| Appliances, hardware-bound software, legacy monoliths
+|===
+
+.Verify: Classify the two apps from this session
+[%collapsible]
+====
+[cols="2,1,3",options="header"]
+|===
+| Workload | Tier | Reason
+
+| `notes-legacy`
+| B
+| Runs as root, Docker Hub base image, token in the image, port 80, local state. All fixable in packaging, as Step 2 to Step 5 proved without changing the code.
+
+| `notes-app` (hardened)
+| A
+| Passes all automated checks; configuration is external and logs go to stdout.
+|===
+====
+
+'''
+
+[#tender-wording]
+=== 3. Turn the checklist into requirements for vendors
+
+*What:* Review example wording that turns the checklist into contract or tender requirements.
+
+*Why:* Most workloads come from third parties. The cheapest moment to get a compliant image is before the contract is signed. It is much harder to change an application once it is delivered.
+
+.Example requirement wording (adapt to your procurement language)
+[%collapsible]
+====
+[cols="1,6",options="header"]
+|===
+| # | The supplier shall...
+
+| 1
+| deliver OCI container images that run as an arbitrary, non-root user ID belonging to group 0, without requiring elevated privileges, privileged security context constraints or a specific user ID.
+
+| 2
+| build images on a base image from an approved, publicly documented source with a published security update policy, and identify that base image and its version in the delivery documentation.
+
+| 3
+| label every image with at least its name and version, and deliver each release as an immutable, uniquely tagged image.
+
+| 4
+| not include credentials, certificates, private keys or other secrets in images, source code or deployment manifests; all such values shall be supplied at runtime by the customer.
+
+| 5
+| support configuration of all environment-specific settings through environment variables or mounted configuration files, so that the same image can be used in all environments.
+
+| 6
+| provide HTTP or command-based health endpoints that indicate whether the application is alive and whether it is ready to receive traffic.
+
+| 7
+| document the CPU and memory requirements of each component under expected load.
+
+| 8
+| document all persistent data, support storing it in an external database or storage service where technically possible, and document the backup and restore procedure.
+
+| 9
+| write all logs to standard output and standard error.
+
+| 10
+| support running multiple instances concurrently and rolling updates without data loss, listen on ports 1024 or above, and shut down gracefully on `SIGTERM` within 30 seconds.
+
+| -
+| deliver new images with updated base images within an agreed number of days after a security update to the base image is published.
+|===
+
+The last row is not on the checklist, but it is what makes the monthly patch cycle (Session 6) possible for vendor images.
+====
+
+'''
+
+[#exercise]
+=== 4. Exercise: score your own applications
+
+*What:* Take two or three real applications that are candidates for the platform, score them against the checklist, and assign a tier.
+
+*Why:* This is the input for the next sessions. Real workloads show which rules hurt in practice, which may need to be relaxed, and which onboarding scenarios the platform must support.
+
+Use this table as a template, one row per application:
+
+[cols="3,1,1,1,1,1,1,1,1,1,1,1,3",options="header"]
+|===
+| Application | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | Tier | Biggest blocker
+
+| _example: vendor scheduling app_
+| ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ | PVC | ✓ | ✗ | B
+| Runs as root, writes to `/var/lib/app`
+
+|
+| | | | | | | | | | | |
+
+|
+| | | | | | | | | | | |
+|===
+
+.Verify: Questions to bring to the next session
+[%collapsible]
+====
+* Which rule did most of your applications fail?
+* Which failures can the platform team fix (manifests), and which need the vendor (image)?
+* Is any rule too strict for your context? What would a documented exception look like, who approves it, and when does it expire?
+* How do your applications get their images today: built in-house, built by a vendor CI, or delivered as image archives? This shapes Session 2.
+====
+
+'''
+
+== What This Solves (Compared to Step 5)
+
+[cols="2,3",options="header"]
+|===
+| Problem | How This Step Solves It
+
+| Fixes were applied one by one, with no shared standard
+| One written checklist that applies to every workload
+
+| No objective way to triage many workloads
+| Automated audit plus maturity tiers
+
+| Vendors deliver whatever they are used to
+| Requirement wording for tenders and contracts
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Images are built by hand from a laptop
+| xref:20-build-pipelines.adoc[Session 2: Build Pipelines]
+
+| Namespaces, quotas and deployments are created by hand
+| xref:30-gitops-deploy.adoc[Session 3: GitOps Deployment]
+
+| The checklist is checked, not enforced
+| xref:70-secure-operations.adoc[Session 7: Secure Operations]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/creating-images[Creating images: general and OpenShift-specific guidelines]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/authentication_and_authorization/managing-pod-security-policies[Managing security context constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/virtualization/about[About OpenShift Virtualization]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Short pragmatic checklist plus tiers (this workshop)
+| Easy to communicate to application owners and vendors, quick to apply, and leaves room for documented exceptions.
+
+| Full best-practice framework (for example the twelve-factor app)
+| A useful background reference, but too broad for contract language and triage. Most rules here are a subset of it.
+
+| Enforce everything at admission from day one
+| Strongest guarantee, but blocks migration of existing workloads before they can be remediated. Better introduced gradually: inform, then warn, then enforce.
+|===
+
+'''
+
+== Reset
+
+Remove the legacy Deployment that was redeployed for the audit. Everything else stays in place for the next session.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 11-legacy-app/deployment.yaml -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+To remove *everything* from Session 1, delete the namespace as described in xref:00-setup.adoc[Cluster Setup].

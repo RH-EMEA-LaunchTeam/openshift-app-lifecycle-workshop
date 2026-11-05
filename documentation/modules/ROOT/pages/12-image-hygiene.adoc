@@ -1,0 +1,295 @@
+= Step 2 - Image Hygiene: UBI, Non-Root and Traceable Images
+include::_attributes.adoc[]
+
+In xref:11-legacy-app.adoc[Step 1] the legacy image crashed because it assumed root. This step rebuilds the *same application code* with an OpenShift-ready Containerfile: a Red Hat Universal Base Image (UBI), files owned by group 0 so any random UID can write them, an unprivileged port, a production web server and labels that make the image traceable. The result runs under the default `restricted-v2` SCC with no exceptions.
+
+== Prerequisites
+
+* xref:11-legacy-app.adoc[Step 1] completed (you have seen the failure)
+* Context `{lab-context}` and `$NS` set as described in xref:00-setup.adoc[Cluster Setup]
+
+== How It Works
+
+OpenShift runs every container with a random UID from the namespace range, but always with GID 0. An image is "arbitrary-UID ready" when:
+
+. everything the app writes to is owned by group 0 (`chgrp -R 0`), and
+. group 0 has the same permissions as the owner (`chmod -R g=u`).
+
+The UBI Python image is already built this way for its own directories. The Containerfile applies the same rule to the app's data directory, so the pattern is explicit and easy to copy.
+
+== Steps to Apply
+
+[#compare-containerfiles]
+=== 1. Compare the two Containerfiles
+
+*What:* Diff the legacy and the hardened Containerfiles.
+
+*Why:* The diff is short. That is the message for vendors: the code does not change, only the packaging does.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+diff -u app/Containerfile.legacy app/Containerfile
+----
+
+.Verify: Map each change to a problem from Step 1
+[%collapsible]
+====
+[cols="2,3",options="header"]
+|===
+| Legacy | Hardened
+
+| `FROM docker.io/library/python:3.12`
+| `FROM {python-image}` - Red Hat maintained, patched and scanned
+
+| `mkdir -p /data` (root only)
+| `chgrp -R 0` + `chmod -R g=u` on the data directory
+
+| Config and token in `ENV`
+| Only environment-independent defaults (`PORT`, `DATA_DIR`, `APP_VERSION`)
+
+| `PORT=80`
+| `PORT=8080`
+
+| No `USER`
+| `USER 1001`
+
+| `python app.py` (dev server)
+| `gunicorn` with a graceful shutdown timeout
+
+| No labels
+| `name`, `version`, `summary` labels
+|===
+====
+
+'''
+
+[#build-hardened]
+=== 2. Build the hardened image
+
+icon:clock[] ~1-2 minutes
+
+*What:* Create the `notes-app` ImageStream and BuildConfig and start a binary build of `app/` with the hardened Containerfile.
+
+*Why:* Same mechanism as Step 1, so the only variable is the Containerfile.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 12-image-hygiene/build.yaml -n "$NS" --context {lab-context}
+oc start-build notes-app --from-dir=app --follow -n "$NS" --context {lab-context}
+----
+
+.Verify: The image runs as non-root and carries labels
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get istag notes-app:latest -n "$NS" --context {lab-context} \
+  -o jsonpath='{.image.dockerImageMetadata.Config.User}{"\n"}{.image.dockerImageMetadata.Config.Labels.name} {.image.dockerImageMetadata.Config.Labels.version}{"\n"}'
+----
+
+[.console-output]
+[source,bash]
+----
+1001
+notes-app 1.0
+----
+====
+
+'''
+
+[#deploy-hardened]
+=== 3. Deploy under restricted-v2
+
+icon:clock[] ~20 seconds
+
+*What:* Deploy the hardened image and remove the legacy Deployment.
+
+*Why:* You want to prove that the image runs under the *default* SCC, with no extra permissions granted to the namespace.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 11-legacy-app/deployment.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc apply -f 12-image-hygiene/deployment.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+----
+
+.Verify: Running, as a random UID, under restricted-v2
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} \
+  -o jsonpath='{.items[0].status.phase} {.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
+oc exec deploy/notes-app -n "$NS" --context {lab-context} -- id
+----
+
+[.console-output]
+[source,bash]
+----
+Running restricted-v2
+uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000
+----
+
+The UID is not 1001, the value in the Containerfile. OpenShift replaced it with a UID from the namespace range, and the app still works because of group 0.
+====
+
+'''
+
+[#expose]
+=== 4. Expose the application
+
+*What:* Create a Service and an edge-terminated HTTPS Route, then store the hostname in `$ROUTE`.
+
+*Why:* You need an external endpoint to test the app in the following steps. TLS is handled by the platform router, so the app does not need certificates.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 12-image-hygiene/service.yaml -f 12-image-hygiene/route.yaml -n "$NS" --context {lab-context}
+export ROUTE=$(oc get route notes-app -n "$NS" --context {lab-context} -o jsonpath='{.spec.host}')
+echo "export ROUTE=$ROUTE" >> myenv.sh
+echo "https://$ROUTE"
+----
+
+NOTE: Appending to `myenv.sh` means `$ROUTE` survives a new terminal. Open the printed URL in a browser to see the app.
+
+.Verify: The app answers over HTTPS
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk "https://$ROUTE/api/info" | jq
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "api_token": "not configured",
+  "environment": "unknown",
+  "greeting": "Hello",
+  "pod": "notes-app-7c9d8b6f4-9tq2m",
+  "storage": "local-file",
+  "version": "1.0"
+}
+----
+
+The image no longer contains a greeting, an environment name or a token. That is intentional: the next step injects them at runtime.
+====
+
+'''
+
+[#provenance]
+=== 5. Image metadata and digests
+
+*What:* Look at the image digest that the Deployment actually runs, and at the digest of the base image.
+
+*Why:* Tags move and digests do not. To know which base image patch level runs in production, which is the basis of the monthly patch cycle in Session 6, you have to track digests.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# What the pod runs (resolved by the ImageStream trigger)
+oc get deploy notes-app -n "$NS" --context {lab-context} \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+
+# What the base image tag points to today
+oc image info {python-image}:latest --filter-by-os=linux/amd64 -o json | jq -r .digest
+----
+
+.Verify: The Deployment references a digest, not a tag
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-app@sha256:4b1c...
+sha256:9e0f...
+----
+
+The `image.openshift.io/triggers` annotation on the Deployment replaced `notes-app:latest` with an immutable digest. When a new build pushes to `notes-app:latest`, the trigger updates the digest and Kubernetes rolls out the new version. You will see this happen in Step 3.
+====
+
+'''
+
+== What This Solves (Compared to Step 1)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 1 | How This Step Solves It
+
+| Crash: permission denied under a random UID
+| Group 0 ownership and `g=u` permissions
+
+| Root assumption
+| `USER 1001`, runs under `restricted-v2` with no exceptions
+
+| Unknown base image provenance
+| UBI from `registry.access.redhat.com`, patched and published by Red Hat
+
+| Privileged port, development server
+| Port 8080, gunicorn
+
+| No traceability
+| Labels plus digest-pinned Deployment
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| No way to set greeting, environment or token per environment
+| xref:13-config-and-secrets.adoc[Step 3: Configuration and Secrets]
+
+| The base image tag `latest` floats, and nobody is alerted when it is patched
+| Session 6: Monthly Patch Cycle
+
+| Builds are started by hand from a laptop
+| Session 2: Build Pipelines
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/creating-images[Creating images (OpenShift guidelines)]
+* link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/building_running_and_managing_containers/assembly_types-of-container-images_building-running-and-managing-containers[Types of container images (UBI)]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/triggering-updates-on-imagestream-changes[Triggering updates on image stream changes]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/networking/configuring-routes[Configuring routes]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| UBI base image (this workshop)
+| Freely redistributable, supported when run on OpenShift, regular security errata, published with signatures and metadata.
+
+| Other distribution images (Debian, Alpine, Rocky)
+| Can be acceptable if they meet the same rules: non-root, group 0 writable, a known patch cadence and a trusted source. The platform should define the rules rather than mandate one base image.
+
+| Source-to-Image (S2I)
+| Builds the image from source without a Containerfile and applies these rules automatically. A good fit for in-house code; less useful when vendors ship their own Containerfile.
+|===
+
+'''
+
+== Reset
+
+Remove the route and service first so no traffic hits a missing backend, then the Deployment and finally the build objects and ImageStream.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 12-image-hygiene/route.yaml -f 12-image-hygiene/service.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 12-image-hygiene/deployment.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 12-image-hygiene/build.yaml -n "$NS" --context {lab-context} --ignore-not-found
+sed -i.bak '/^export ROUTE=/d' myenv.sh && unset ROUTE
+----

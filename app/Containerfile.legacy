@@ -1,0 +1,31 @@
+# Containerfile.legacy
+# Purpose: How the app is typically packaged for "docker run" on a single VM.
+#          It works on a VM. It is NOT ready for a shared OpenShift platform.
+#          Every line marked "PROBLEM" is fixed in Containerfile.
+#
+# PROBLEM: community base image from Docker Hub, floating tag, unknown provenance
+FROM docker.io/library/python:3.12
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+
+# PROBLEM: data directory owned by root and only writable by root
+RUN mkdir -p /data
+
+# PROBLEM: environment-specific configuration baked into the image
+ENV APP_GREETING="Hello from the VM" \
+    APP_ENV="production" \
+    APP_VERSION="1.0-legacy"
+
+# PROBLEM: a credential baked into the image (readable by anyone who can pull it)
+ENV API_TOKEN="vendor-demo-token-8f3a9c21"
+
+# PROBLEM: privileged port 80
+ENV PORT=80
+EXPOSE 80
+
+# PROBLEM: no USER instruction, so the process expects to run as root
+# PROBLEM: development web server
+CMD ["python", "app.py"]

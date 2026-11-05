@@ -1,0 +1,344 @@
+= Step 5 - Stateless and Scalable: Where Should the State Live?
+include::_attributes.adoc[]
+
+Kubernetes is good at running many identical copies of an application, moving them between nodes and replacing them at any time. That only works if any copy can be thrown away without losing anything. `notes-app` still writes its notes to the container's local disk, like it did on its VM. This step shows what goes wrong when you scale such an app, then moves the state to a database so the app becomes disposable: three replicas, shared data, and rolling updates with no downtime.
+
+== Prerequisites
+
+* xref:14-health-and-resources.adoc[Step 4] completed: probes, resources and namespace guardrails are in place
+* `$ROUTE` set
+
+== How It Works
+
+[cols="2,3,3",options="header"]
+|===
+| Where the state lives | What happens when a pod is replaced | Fit
+
+| Container filesystem
+| Data is gone
+| Never, except for caches and temporary files
+
+| Persistent volume (PVC) attached to the pod
+| Data survives, but with `ReadWriteOnce` only one pod can use it, so the app cannot scale out and node failures need a volume re-attach
+| Acceptable fallback for apps that cannot change
+
+| External service (database, object storage, queue)
+| Pods hold nothing. Any number of replicas, any node, replaced at any time
+| Target pattern
+|===
+
+In this workshop, a small PostgreSQL instance in the same namespace stands in for a managed database service. In production, the database would usually be provided by a dedicated database team or service, and the application only receives a connection string through a Secret.
+
+== Steps to Apply
+
+[#scale-file]
+=== 1. Scale with local state
+
+*What:* Scale to three replicas, add six notes, then list the notes several times.
+
+*Why:* Each pod has its own `notes.txt`. The router spreads requests across the pods, so every user sees a different, partial list.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc scale deploy/notes-app --replicas=3 -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+
+for i in 1 2 3 4 5 6; do
+  curl -sk -X POST -H 'Content-Type: application/json' \
+    -d "{\"text\":\"note $i\"}" "https://$ROUTE/api/notes" | jq -r .pod
+done
+----
+
+.Verify: The note count depends on which pod answers
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+for i in 1 2 3 4 5 6; do
+  curl -sk "https://$ROUTE/api/notes" | jq -r '"\(length) notes"'
+done
+----
+
+[.console-output]
+[source,bash]
+----
+2 notes
+3 notes
+1 notes
+3 notes
+2 notes
+1 notes
+----
+
+Your numbers will differ, but they will not all be 6.
+====
+
+'''
+
+[#lose-data]
+=== 2. Lose data on pod restart
+
+*What:* Delete one pod and check how many notes are left in total.
+
+*Why:* Pods are replaced all the time: node maintenance, cluster upgrades, rescheduling, new image versions. With local state, every replacement is data loss.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+POD=$(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} -o name | head -1)
+oc exec "$POD" -n "$NS" --context {lab-context} -- wc -l /opt/app-root/data/notes.txt
+oc delete "$POD" -n "$NS" --context {lab-context}
+----
+
+.Verify: The new pod starts empty
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+for p in $(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} -o name); do
+  echo "$p: $(oc exec "$p" -n "$NS" --context {lab-context} -- wc -l /opt/app-root/data/notes.txt | awk '{print $1}') notes"
+done
+----
+
+[.console-output]
+[source,bash]
+----
+pod/notes-app-5f7d9c8b6d-7xk2p: 2 notes
+pod/notes-app-5f7d9c8b6d-q9z4m: 3 notes
+pod/notes-app-5f7d9c8b6d-zt8wd: 0 notes
+----
+
+The notes stored in the deleted pod are gone for good.
+====
+
+'''
+
+[#database]
+=== 3. Move state to a database
+
+icon:clock[] ~1 minute (volume provisioning and database initialisation)
+
+*What:* Create the database credentials, deploy PostgreSQL, then apply the Deployment that connects to it through `DATABASE_URL`.
+
+*Why:* The application already supports a database backend. Moving state out of the pod is a *configuration* change, not a code change. Many vendor applications support an external database in the same way, and it is the first thing to ask a vendor about.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc create secret generic notes-db \
+  --from-literal=username=notes \
+  --from-literal=password="$(openssl rand -hex 12)" \
+  -n "$NS" --context {lab-context}
+
+oc apply -f 15-stateless-and-scale/postgresql.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-db -n "$NS" --context {lab-context} --timeout=180s
+----
+
+Now point the application at the database:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+diff -u 14-health-and-resources/deployment.yaml 15-stateless-and-scale/deployment.yaml
+oc apply -f 15-stateless-and-scale/deployment.yaml -f 15-stateless-and-scale/pdb.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+----
+
+NOTE: The PostgreSQL image comes from `registry.redhat.io`, which requires authentication. OpenShift clusters have a global pull secret for it, so no extra configuration is needed.
+
+.Verify: All three pods use PostgreSQL
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -n "$NS" --context {lab-context}
+for i in 1 2 3; do curl -sk "https://$ROUTE/api/info" | jq -r '"\(.pod) \(.storage)"'; done
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                         READY   STATUS    RESTARTS   AGE
+notes-app-6b8f7d9c5-4kq8x    1/1     Running   0          30s
+notes-app-6b8f7d9c5-mz7tn    1/1     Running   0          25s
+notes-app-6b8f7d9c5-x2wqp    1/1     Running   0          20s
+notes-db-7d8c6b5f4-hk9vl     1/1     Running   0          90s
+notes-app-6b8f7d9c5-x2wqp postgresql
+notes-app-6b8f7d9c5-4kq8x postgresql
+notes-app-6b8f7d9c5-mz7tn postgresql
+----
+====
+
+'''
+
+[#verify-shared]
+=== 4. Verify shared state
+
+*What:* Add six notes, list them from different pods, then delete *all* application pods at once.
+
+*Why:* This is the property you want from every app on the platform: any pod can serve any request, and losing every pod loses nothing.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+for i in 1 2 3 4 5 6; do
+  curl -sk -X POST -H 'Content-Type: application/json' \
+    -d "{\"text\":\"shared note $i\"}" "https://$ROUTE/api/notes" > /dev/null
+done
+oc delete pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+----
+
+.Verify: Every pod sees all six notes, even after a full restart
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+for i in 1 2 3 4 5 6; do
+  curl -sk "https://$ROUTE/api/notes" | jq -r '"\(length) notes"'
+done
+----
+
+[.console-output]
+[source,bash]
+----
+6 notes
+6 notes
+6 notes
+6 notes
+6 notes
+6 notes
+----
+
+Open `https://$ROUTE` in a browser: each note shows which pod wrote it, and they come from different pods.
+====
+
+'''
+
+[#rolling-update]
+=== 5. Zero-downtime rolling update
+
+icon:clock[] ~45 seconds
+
+*What:* Send a request every half second while restarting the Deployment, then count the HTTP status codes.
+
+*Why:* Every monthly patch is a rollout. If rollouts cause errors, teams start avoiding them, and patching slows down. With readiness probes, a `preStop` delay, `maxUnavailable: 0` and stateless pods, a rollout is invisible to users.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+( for i in $(seq 1 80); do
+    curl -sk -o /dev/null -w '%\{http_code}\n' "https://$ROUTE/api/notes"; sleep 0.5
+  done ) > /tmp/rollout-codes.txt &
+
+oc rollout restart deploy/notes-app -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+wait
+sort /tmp/rollout-codes.txt | uniq -c
+----
+
+.Verify: Only HTTP 200 during the rollout
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+     80 200
+----
+
+If you see a few `502` or `503` responses, compare with the Step 4 Deployment (no `preStop` hook, one replica) to see why each setting matters.
+
+The PodDisruptionBudget protects the same property during node drains:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pdb notes-app -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME        MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+notes-app   2               N/A               1                     2m
+----
+====
+
+'''
+
+== What This Solves (Compared to Step 4)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 4 | How This Step Solves It
+
+| Single replica: any not-ready moment is an outage
+| Three replicas plus a PodDisruptionBudget
+
+| Notes on local disk, lost on every pod replacement
+| State in PostgreSQL, pods are disposable
+
+| Rollouts could drop requests
+| `maxUnavailable: 0`, readiness probe and `preStop` delay
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| The database itself holds state that must be backed up and restored
+| Session 5: Backup and Restore
+
+| Deciding which of your applications can follow this pattern
+| xref:16-admission-checklist.adoc[Step 6: Platform Admission Checklist]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/building_applications/deployments[Understanding deployments]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/storage/understanding-persistent-storage[Understanding persistent storage]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/nodes/working-with-pods#nodes-pods-pod-disruption-about_nodes-pods-configuring[Understanding pod disruption budgets]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| External database service (this workshop's target)
+| Pods are stateless; backup, high availability and patching of the database are handled by a dedicated team or service.
+
+| Database in the same namespace (this workshop's stand-in)
+| Self-contained and good for test environments. In production the application team then owns database operations, backups included.
+
+| Database operator on the platform
+| Operators automate high availability, backups and upgrades for databases running on OpenShift. A middle ground when no central database service exists.
+
+| PVC on the application pod
+| Keeps legacy apps running unchanged, but limits them to one replica and makes upgrades and node maintenance riskier.
+|===
+
+'''
+
+== Reset
+
+Go back to the single-replica Step 4 Deployment first so no pod depends on the database, then remove the PodDisruptionBudget, the database (including its volume) and the credentials.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 15-stateless-and-scale/pdb.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc apply -f 14-health-and-resources/deployment.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+oc delete -f 15-stateless-and-scale/postgresql.yaml -n "$NS" --context {lab-context} --ignore-not-found --wait
+oc delete secret notes-db -n "$NS" --context {lab-context} --ignore-not-found
+rm -f /tmp/rollout-codes.txt
+----

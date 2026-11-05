@@ -1,0 +1,34 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+env:
+  SITE_DIR: "gh-pages"
+
+jobs:
+  build_and_deploy:
+    name: "Build and deploy site"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Generate site using antora site action"
+        uses: kameshsampath/antora-site-action@master
+        with:
+          antora_playbook: site.yml
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ${{ env.SITE_DIR }}
+          branch: gh-pages
+          commit-message: "[CI] Publish Documentation for ${{ github.sha }}"
+          clean-exclude: pr

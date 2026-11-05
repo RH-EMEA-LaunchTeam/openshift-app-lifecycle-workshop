@@ -1,0 +1,15 @@
+# pdb.yaml
+# Purpose: Keep at least 2 notes-app pods running during voluntary disruptions
+#          such as node drains for cluster upgrades.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-app

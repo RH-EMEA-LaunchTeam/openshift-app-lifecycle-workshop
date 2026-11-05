@@ -1,0 +1,32 @@
+# build.yaml
+# Purpose: ImageStream + BuildConfig that build the "legacy" image from
+#          app/Containerfile.legacy inside the cluster (binary build, no Git needed).
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: notes-legacy
+  labels:
+    app.kubernetes.io/name: notes-legacy
+    app.kubernetes.io/part-of: notes-app
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: notes-legacy
+  labels:
+    app.kubernetes.io/name: notes-legacy
+    app.kubernetes.io/part-of: notes-app
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Containerfile.legacy
+  output:
+    to:
+      kind: ImageStreamTag
+      name: notes-legacy:latest

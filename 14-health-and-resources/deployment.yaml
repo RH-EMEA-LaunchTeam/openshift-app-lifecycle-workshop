@@ -1,0 +1,64 @@
+# deployment.yaml
+# Purpose: Step 13 deployment + health probes, resource requests/limits and a
+#          graceful shutdown window.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+  annotations:
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"notes-app:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"notes-app\")].image"}]
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notes-app
+        app.kubernetes.io/part-of: notes-app
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: notes-app
+          image: notes-app:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: notes-app-config
+          env:
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: notes-app-token
+                  key: API_TOKEN
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+            failureThreshold: 2

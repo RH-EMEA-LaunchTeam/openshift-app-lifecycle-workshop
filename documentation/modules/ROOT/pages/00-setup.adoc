@@ -1,0 +1,264 @@
+= Cluster Setup
+include::_attributes.adoc[]
+
+This page prepares your environment: log in to the workshop cluster, export the workshop variables, clone the repository and create the namespace that every later step uses. Every later step assumes these are done.
+
+[#prerequisites]
+== Prerequisites
+
+* One OpenShift {ocp-version} cluster (provisioned from the Red Hat Demo Platform for this workshop)
+* `oc` CLI ({ocp-version}) installed, or the OpenShift *Web Terminal* (see the tip below)
+* `git`, `curl` and `jq` available
+* Cluster-admin access to the cluster (some steps create platform-side objects such as quotas)
+
+TIP: If you cannot install tools on your workstation, open the *Web Terminal* from the `>_` icon in the top-right corner of the OpenShift web console. It already has `oc`, `git`, `curl` and `jq`, and it is logged in as your user. You can skip the login part of this page and go straight to <<clone-repo>>, then run `oc config rename-context "$(oc config current-context)" {lab-context}` once.
+
+[#cluster-mapping]
+== Cluster mapping
+
+[cols="2,2,4",options="header"]
+|===
+| Role | Context name | Purpose
+
+| Workshop cluster
+| `{lab-context}`
+| Throwaway cluster used for builds, deployments and all exercises. It is deleted after the hands-on window, so nothing you do here can affect a real environment.
+|===
+
+== Option A: Pre-provisioned cluster (Demo Platform)
+
+If someone else already set up the context for you, skip to <<option-b>>.
+
+=== 1. Gather cluster credentials
+
+*What:* Collect the API URL, console URL and credentials from the Demo Platform email or service page.
+
+*Why:* You need them to log in and to fill in `myenv.sh`.
+
+They look something like:
+
+[.console-output]
+[source,bash]
+----
+Console: https://console-openshift-console.apps.cluster-xxxxx.example.com
+API:     https://api.cluster-xxxxx.example.com:6443
+User:    admin
+----
+
+.Verify: The API endpoint answers
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk https://api.cluster-xxxxx.example.com:6443/version | jq -r .gitVersion
+----
+
+[.console-output]
+[source,bash]
+----
+v1.29.x
+----
+
+NOTE: `-k` skips TLS verification because demo clusters use self-signed certificates. In production, trust the cluster CA instead.
+====
+
+'''
+
+[#export-variables]
+=== 2. Create your myenv.sh
+
+*What:* Create a personal `myenv.sh` with your cluster details and workshop variables.
+
+*Why:* One file holds every environment-specific value, so every command in the workshop can be copied as-is. The file is gitignored because it contains a password.
+
+Create `myenv.sh` at the root of the repository (or in your home directory if you have not cloned it yet) with this structure:
+
+[.console-output]
+[source,bash]
+----
+# Console URL (for quick reference - not used by scripts)
+# Console: https://console-openshift-console.apps.<cluster-domain>
+
+# ── Workshop variables ───────────────────────────────────────────────────
+export LAB_API_URL="https://api.<cluster-domain>:6443"
+export NS="app-lifecycle"     # change it if several people share one cluster
+export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"
+
+# ── Context cleanup (idempotent) ─────────────────────────────────────────
+oc config delete-context lab 2>/dev/null
+
+# ── Login + rename context ───────────────────────────────────────────────
+oc login "$LAB_API_URL" --username <user> --password <password> --insecure-skip-tls-verify
+oc config rename-context "$(oc config current-context)" lab
+----
+
+[cols="2,2,4",options="header"]
+|===
+| Variable | Used in | Description
+
+| `LAB_API_URL`
+| `myenv.sh`
+| API server URL of the workshop cluster
+
+| `NS`
+| Every step
+| Namespace for the reference application. Use a unique value per person if several participants share one cluster, for example `app-lifecycle-user1`.
+
+| `GIT_REPO_URL`
+| <<clone-repo>>
+| Clone URL of this workshop repository
+
+| `ROUTE`
+| Steps 2 to 5
+| Hostname of the application route. Set in xref:12-image-hygiene.adoc#expose[Step 2].
+|===
+
+NOTE: `--insecure-skip-tls-verify` is only acceptable on throwaway demo clusters with self-signed certificates.
+
+.Verify: The file defines the variables
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+grep -E '^export' myenv.sh
+----
+
+[.console-output]
+[source,bash]
+----
+export LAB_API_URL="https://api.cluster-xxxxx.example.com:6443"
+export NS="app-lifecycle"
+export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"
+----
+====
+
+'''
+
+[#login-clusters]
+=== 3. Log in and rename the context
+
+*What:* Source `myenv.sh`.
+
+*Why:* It logs in and renames the context to `{lab-context}`. Every `oc` command in the workshop uses `--context {lab-context}`, so commands never hit the wrong cluster by accident.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+source myenv.sh
+----
+
+.Verify: The context exists and is authenticated
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context {lab-context}
+oc config get-contexts -o name | grep -x {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+admin
+lab
+----
+====
+
+'''
+
+[#option-b]
+== Option B: Quick check (context already configured)
+
+If someone already ran `source myenv.sh` for you, check that the context works and that the variables are exported:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context {lab-context}
+echo "NS=$NS"
+----
+
+If both print a value, continue with <<clone-repo>>.
+
+'''
+
+== Prepare the workshop
+
+[#clone-repo]
+=== 4. Clone the repository
+
+*What:* Clone the workshop repository and move into it.
+
+*Why:* The application source (`app/`) and the manifests for every step live in the repository. All commands are run from its root.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+git clone "$GIT_REPO_URL" openshift-app-lifecycle-workshop
+cd openshift-app-lifecycle-workshop
+----
+
+.Verify: The step directories are present
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+ls -d app 1*-*/
+----
+
+[.console-output]
+[source,bash]
+----
+11-legacy-app/  12-image-hygiene/  13-config-and-secrets/  14-health-and-resources/  15-stateless-and-scale/  16-admission-checklist/  app/
+----
+====
+
+'''
+
+[#create-namespace]
+=== 5. Create the workshop namespace
+
+*What:* Create the namespace that holds the reference application.
+
+*Why:* A namespace is the unit of tenancy on OpenShift: quotas, permissions, network policies and backups are all scoped to it. In later sessions this namespace is created through a pull request instead of by hand.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc create namespace "$NS" --context {lab-context}
+----
+
+.Verify: The namespace exists and has a UID range assigned
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get namespace "$NS" --context {lab-context} \
+  -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}{"\n"}'
+----
+
+[.console-output]
+[source,bash]
+----
+1000680000/10000
+----
+
+The numbers vary per namespace. This is the range of random UIDs OpenShift picks from when it runs containers in this namespace. It matters in xref:11-legacy-app.adoc[Step 1].
+====
+
+'''
+
+== Reset
+
+Deleting the namespace removes everything created in Session 1, including builds, images in the internal registry for this namespace, and the database volume.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete namespace "$NS" --context {lab-context} --ignore-not-found --wait
+----

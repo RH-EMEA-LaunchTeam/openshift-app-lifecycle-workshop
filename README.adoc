@@ -1,0 +1,65 @@
+= OpenShift Application Lifecycle Workshop
+
+A workshop series that follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image monthly, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster followed by hands-on access.
+
+Session 1 (onboarding-ready applications) is complete. Sessions 2 to 9 are planned and shown as outlines.
+
+== View the course
+
+The full course is published at: https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop
+
+== Local development
+
+To preview the course site locally:
+
+[source,bash]
+----
+npm install
+npm run dev
+----
+
+This starts a live-reload server at http://localhost:3000.
+
+== Build the site
+
+[source,bash]
+----
+npx antora site.yml
+----
+
+The generated site is output to `gh-pages/`.
+
+== Repository structure
+
+[cols="2,4",options="header"]
+|===
+| Directory | Purpose
+
+| `documentation/`
+| Antora courseware source (AsciiDoc pages, navigation, attributes)
+
+| `app/`
+| Reference application `notes-app` (Python), with a legacy and an OpenShift-ready Containerfile. Reused by every session.
+
+| `11-legacy-app/`
+| Session 1, Step 1 - build and deploy the legacy image unchanged
+
+| `12-image-hygiene/`
+| Session 1, Step 2 - hardened image build, Deployment, Service and Route
+
+| `13-config-and-secrets/`
+| Session 1, Step 3 - ConfigMap and Deployment with runtime configuration
+
+| `14-health-and-resources/`
+| Session 1, Step 4 - LimitRange, ResourceQuota and Deployment with probes and resources
+
+| `15-stateless-and-scale/`
+| Session 1, Step 5 - PostgreSQL, three-replica Deployment and PodDisruptionBudget
+
+| `16-admission-checklist/`
+| Session 1, Step 6 - namespace audit script for the platform admission checklist
+|===
+
+== Naming convention
+
+Pages and step directories use a two-digit prefix: the first digit is the session, the second the step within it (`13-` is Session 1, Step 3). `00-setup` is shared by all sessions.

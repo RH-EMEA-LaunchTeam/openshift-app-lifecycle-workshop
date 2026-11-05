@@ -1,0 +1,132 @@
+= OpenShift Application Lifecycle Workshop
+:page-layout: home
+:!sectids:
+include::_attributes.adoc[]
+
+[.text-center.strong]
+== From "docker run on a VM" to a repeatable, monthly application lifecycle on OpenShift
+
+This workshop series follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image every month, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster, followed by two days of hands-on access so the team can repeat every step without fear of breaking anything.
+
+The series is written for platform teams that are bringing many existing container workloads, often built by third-party vendors and running with `docker` or `podman` on standalone VMs, onto a shared OpenShift platform.
+
+.The lifecycle this series proves end to end
+[cols="1,1,1,1,1,1,1,1",options="header"]
+|===
+| Build | Deploy | Run | Backup | Patch | Redeploy | Verify | Restore
+| source to image | GitOps | logs and metrics | app and data | base image | verified rollout | security and ops | documented test
+|===
+
+[.tiles.browse]
+== Session 1: Onboarding-Ready Applications
+
+[.tile]
+.xref:00-setup.adoc[Cluster setup]
+* xref:00-setup.adoc#prerequisites[Prerequisites]
+* xref:00-setup.adoc#export-variables[Export variables]
+* xref:00-setup.adoc#create-namespace[Create the namespace]
+
+[.tile]
+.xref:11-legacy-app.adoc[Step 1: The legacy app]
+* xref:11-legacy-app.adoc#build-legacy[Build the VM image]
+* xref:11-legacy-app.adoc#deploy-legacy[Deploy it as-is]
+* xref:11-legacy-app.adoc#diagnose[Why it fails]
+
+[.tile]
+.xref:12-image-hygiene.adoc[Step 2: Image hygiene]
+* xref:12-image-hygiene.adoc#compare-containerfiles[UBI and non-root]
+* xref:12-image-hygiene.adoc#deploy-hardened[Run under restricted-v2]
+* xref:12-image-hygiene.adoc#provenance[Labels and digests]
+
+[.tile]
+.xref:13-config-and-secrets.adoc[Step 3: Config and secrets]
+* xref:13-config-and-secrets.adoc#find-token[Tokens baked in images]
+* xref:13-config-and-secrets.adoc#configmap[ConfigMaps]
+* xref:13-config-and-secrets.adoc#secret[Secrets]
+
+[.tile]
+.xref:14-health-and-resources.adoc[Step 4: Health and resources]
+* xref:14-health-and-resources.adoc#tenant-guardrails[Quotas and limits]
+* xref:14-health-and-resources.adoc#probes-resources[Probes]
+* xref:14-health-and-resources.adoc#break-readiness[Readiness in action]
+
+[.tile]
+.xref:15-stateless-and-scale.adoc[Step 5: Stateless and scalable]
+* xref:15-stateless-and-scale.adoc#lose-data[The cost of local state]
+* xref:15-stateless-and-scale.adoc#database[State in a database]
+* xref:15-stateless-and-scale.adoc#rolling-update[Zero-downtime updates]
+
+[.tile]
+.xref:16-admission-checklist.adoc[Step 6: Admission checklist]
+* xref:16-admission-checklist.adoc#checklist[10-point checklist]
+* xref:16-admission-checklist.adoc#maturity-tiers[Maturity tiers]
+* xref:16-admission-checklist.adoc#tender-wording[Tender wording]
+
+[.tiles.browse]
+== Upcoming Sessions
+
+[.tile]
+.xref:20-build-pipelines.adoc[Session 2: Build pipelines]
+* Tekton: source to image
+* Scan and push
+* Importing vendor images
+
+[.tile]
+.xref:30-gitops-deploy.adoc[Session 3: GitOps deployment]
+* Tenant onboarding by pull request
+* Kustomize overlays
+* Promotion between environments
+
+[.tile]
+.xref:40-observe.adoc[Session 4: Run and observe]
+* User workload monitoring
+* Alerts
+* Log filtering and forwarding
+
+[.tile]
+.xref:50-backup-restore.adoc[Session 5: Backup and restore]
+* OADP backup of app and data
+* Restore test
+* Runbook evidence
+
+[.tile]
+.xref:60-monthly-patching.adoc[Session 6: Monthly patch cycle]
+* Base image update
+* Rebuild, scan, redeploy
+* Ownership model
+
+[.tile]
+.xref:70-secure-operations.adoc[Session 7: Secure operations]
+* Security policies
+* Admission control
+* Image age and CVEs
+
+[.tile]
+.xref:80-fleet-environments.adoc[Session 8: Fleet and environments]
+* Governance policies
+* Environment strategy
+* Argo CD topology
+
+[.tile]
+.xref:90-capstone.adoc[Session 9: Capstone]
+* The full monthly cycle
+* End to end, repeatable
+
+== Environment
+
+[cols="2,3",options="header"]
+|===
+| Item | Value
+
+| OpenShift version
+| {ocp-version}
+
+| Clusters
+| One throwaway OpenShift cluster from the Red Hat Demo Platform (context `{lab-context}`)
+
+| Reference application
+| `notes-app`, a small Python web application (source in `app/`)
+
+| Base image
+| `{python-image}` (Red Hat Universal Base Image {ubi-version})
+|===

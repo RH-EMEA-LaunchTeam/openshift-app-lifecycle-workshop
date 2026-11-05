@@ -1,0 +1,17 @@
+# resourcequota.yaml
+# Purpose: Platform-side guardrail. Caps the total resources one tenant
+#          namespace can consume on the shared cluster.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.memory: 8Gi
+    pods: "20"
+    persistentvolumeclaims: "5"
+    requests.storage: 20Gi

@@ -1,0 +1,85 @@
+# deployment.yaml
+# Purpose: Step 14 deployment + 3 replicas, state moved to PostgreSQL through
+#          DATABASE_URL, a preStop hook and a rolling update strategy with no
+#          unavailable pods.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+  annotations:
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"notes-app:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"notes-app\")].image"}]
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notes-app
+        app.kubernetes.io/part-of: notes-app
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: notes-app
+          image: notes-app:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: notes-app-config
+          env:
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: notes-app-token
+                  key: API_TOKEN
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: {name: notes-db, key: username}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: notes-db, key: password}
+            # Kubernetes expands $(VAR) from variables defined earlier in this list
+            - name: DATABASE_URL
+              value: postgresql://$(DB_USER):$(DB_PASSWORD)@notes-db:5432/notes
+          lifecycle:
+            # Keep serving for a few seconds after termination starts, so the
+            # router and Service stop sending traffic before gunicorn shuts down.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+            failureThreshold: 2

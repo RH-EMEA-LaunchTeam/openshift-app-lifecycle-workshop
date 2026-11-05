@@ -1,0 +1,303 @@
+= Step 1 - The Legacy App: What Happens When a VM Container Meets OpenShift
+include::_attributes.adoc[]
+
+Most workloads that arrive at a shared platform were never designed for it. They were packaged to run with `docker run` on a dedicated VM, where the container runs as root, writes wherever it likes, and has its configuration and credentials baked in. This step takes such an image, unchanged, and deploys it on OpenShift so you can see exactly where and why it breaks. Everything later in Session 1 fixes one of these breaks.
+
+== Prerequisites
+
+* xref:00-setup.adoc[Cluster Setup] completed: context `{lab-context}` works, `$NS` is exported and the namespace exists
+* You are in the root of the cloned repository
+
+== How It Works
+
+The reference application, `notes-app`, is a tiny Python web app that shows a greeting and lets you add notes. Its code lives in `app/app.py`. Two Containerfiles package the same code:
+
+[cols="2,4",options="header"]
+|===
+| File | Purpose
+
+| `app/Containerfile.legacy`
+| How a vendor would package it for a VM. Used in this step.
+
+| `app/Containerfile`
+| The OpenShift-ready version. Used from xref:12-image-hygiene.adoc[Step 2] onwards.
+|===
+
+You build the image *inside* the cluster with an OpenShift BuildConfig, so you do not need `podman` or `docker` on your workstation. The image lands in the cluster's internal registry, in an ImageStream called `notes-legacy`.
+
+== Steps to Apply
+
+[#inspect-containerfile]
+=== 1. Inspect the legacy Containerfile
+
+*What:* Read the legacy Containerfile and find the lines marked `PROBLEM`.
+
+*Why:* These are the patterns you will meet over and over again in vendor images. Being able to spot them in 30 seconds is the first skill an onboarding reviewer needs.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat app/Containerfile.legacy
+----
+
+.Verify: Count the problems
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+grep -c PROBLEM app/Containerfile.legacy
+----
+
+[.console-output]
+[source,bash]
+----
+7
+----
+
+[cols="1,3",options="header"]
+|===
+| Problem | Why it matters on a shared platform
+
+| Docker Hub base image, floating tag
+| Unknown provenance, no patch commitment, rate-limited pulls, and the content behind `:3.12` changes without notice.
+
+| Root-owned data directory
+| OpenShift does not run containers as root, so the app cannot write there.
+
+| Configuration baked in
+| A different image per environment, which means what you tested is not what you run.
+
+| Credential baked in
+| Anyone who can pull the image can read the token.
+
+| Port 80
+| Ports below 1024 traditionally need root.
+
+| No `USER`
+| The image assumes root.
+
+| Development server
+| Not built for concurrent production traffic or clean shutdown.
+|===
+====
+
+'''
+
+[#build-legacy]
+=== 2. Build the legacy image in the cluster
+
+icon:clock[] ~1-2 minutes (base image pull and `pip install`)
+
+*What:* Create an ImageStream and a BuildConfig, then start a binary build that uploads the `app/` directory.
+
+*Why:* This is the simplest way to get a local directory into the cluster's registry without a CI system. Session 2 replaces it with a proper pipeline.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 11-legacy-app/build.yaml -n "$NS" --context {lab-context}
+oc start-build notes-legacy --from-dir=app --follow -n "$NS" --context {lab-context}
+----
+
+NOTE: The legacy image pulls its base from Docker Hub. If the build fails with `toomanyrequests`, the cluster hit the anonymous Docker Hub pull limit. That is itself a good argument for a central, curated registry. Retry after a few minutes.
+
+.Verify: The image is in the internal registry
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get istag notes-legacy:latest -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                  IMAGE REFERENCE                                                                  UPDATED
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy@sha256:...   30 seconds ago
+----
+====
+
+'''
+
+[#deploy-legacy]
+=== 3. Deploy it as-is
+
+icon:clock[] ~30 seconds (the pod needs a few restarts to reach CrashLoopBackOff)
+
+*What:* Deploy the legacy image with a plain Deployment: no probes, no resources, no configuration.
+
+*Why:* This is what "lift and shift" looks like. You want to see the failure with your own eyes before fixing it.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 11-legacy-app/deployment.yaml -n "$NS" --context {lab-context}
+----
+
+.Verify: The pod crashes
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                            READY   STATUS             RESTARTS      AGE
+notes-legacy-6d9c7b8f5d-x2kqp   0/1     CrashLoopBackOff   2 (15s ago)   40s
+----
+====
+
+'''
+
+[#diagnose]
+=== 4. Diagnose the failure
+
+*What:* Read the logs, then check which user the container actually ran as and which Security Context Constraint (SCC) admitted it.
+
+*Why:* "It works on my VM" usually means "it works as root". Knowing how to prove that in under a minute saves hours of back-and-forth with a vendor.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc logs deploy/notes-legacy -n "$NS" --context {lab-context} | tail -3
+----
+
+[.console-output]
+[source,bash]
+----
+    with open(self.path, "a", encoding="utf-8"):
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/data/notes.txt'
+----
+
+Now check the SCC and the user ID:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context {lab-context} \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
+oc debug deploy/notes-legacy -n "$NS" --context {lab-context} -- id
+----
+
+[.console-output]
+[source,bash]
+----
+restricted-v2
+uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000
+----
+
+.Verify: Understand what happened
+[%collapsible]
+====
+. OpenShift admitted the pod with the default `restricted-v2` SCC.
+. `restricted-v2` ignores the image's assumption of root and runs the process with a *random UID* from the namespace range you saw in xref:00-setup.adoc#create-namespace[setup], always with *group 0*.
+. `/data` was created by root during the build and is only writable by root.
+. The app tries to open `/data/notes.txt` at startup, fails, and exits. Kubernetes restarts it, it fails again: `CrashLoopBackOff`.
+
+Fixing the data directory would only reveal the next problem: port 80. One problem at a time is exactly how vendor migrations go when nobody has a checklist.
+====
+
+'''
+
+[#why-not-anyuid]
+=== 5. Why not just grant anyuid?
+
+*What:* See the one-line "fix" that many teams reach for, and why the platform should not offer it by default. Do not run the command.
+
+*Why:* The pressure to make it work *now* is real. The platform team needs a clear, explainable answer when someone asks for this.
+
+[.console-output]
+[source,bash]
+----
+# DO NOT RUN - shown for discussion only
+oc adm policy add-scc-to-user anyuid -z default -n "$NS"
+----
+
+.Verify: The trade-off
+[%collapsible]
+====
+[cols="2,3",options="header"]
+|===
+| With anyuid | Consequence
+
+| Container runs as root (UID 0)
+| A container escape lands as root on the node, which is shared with every other tenant.
+
+| Exception per workload
+| Every exception has to be requested, reviewed, documented and re-reviewed. That does not scale to a hundred workloads.
+
+| Hides the real problem
+| The image stays non-compliant, and the next platform hardening step breaks it again.
+|===
+
+The platform rule this leads to is item 1 of the xref:16-admission-checklist.adoc[admission checklist]: *the image runs as an arbitrary non-root UID in group 0*. Exceptions exist, but they are explicit, time-boxed and owned.
+====
+
+'''
+
+== What This Solves
+
+This step does not solve anything yet. It gives you a baseline and a vocabulary: random UID, group 0, `restricted-v2`, baked-in configuration. Every following step fixes one of these.
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Root assumption, Docker Hub base, port 80, dev server
+| xref:12-image-hygiene.adoc[Step 2: Image Hygiene]
+
+| Configuration and token baked into the image
+| xref:13-config-and-secrets.adoc[Step 3: Configuration and Secrets]
+
+| No health checks or resource boundaries
+| xref:14-health-and-resources.adoc[Step 4: Health and Resources]
+
+| State on local disk
+| xref:15-stateless-and-scale.adoc[Step 5: Stateless and Scalable]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/authentication_and_authorization/managing-pod-security-policies[Managing security context constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/images/creating-images#use-uid_create-images[Creating images: support arbitrary user IDs]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/builds_using_buildconfig/index[Builds using BuildConfig]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Fix the image (this workshop)
+| Works under the default SCC, no exception to manage, portable to any OpenShift or Kubernetes cluster with Pod Security Admission.
+
+| Grant `anyuid` or a custom SCC
+| Fast, but moves the risk to the shared nodes and creates an exception that has to be governed for the lifetime of the workload. Reserve for the rare cases that genuinely cannot be fixed.
+
+| Keep the workload on its VM
+| A valid outcome. Not every workload belongs on the platform; the maturity tiers in xref:16-admission-checklist.adoc#maturity-tiers[Step 6] make that decision explicit.
+|===
+
+'''
+
+== Reset
+
+Delete the Deployment first so no new pods get created, then the build objects and the ImageStream (which also removes the image from the internal registry).
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 11-legacy-app/deployment.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 11-legacy-app/build.yaml -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+TIP: Keep the legacy image around if you plan to do xref:13-config-and-secrets.adoc#find-token[Step 3] and xref:16-admission-checklist.adoc#run-check[Step 6], which inspect it again.

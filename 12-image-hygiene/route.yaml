@@ -1,0 +1,18 @@
+# route.yaml
+# Purpose: Expose notes-app over HTTPS with edge TLS termination at the router.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+spec:
+  to:
+    kind: Service
+    name: notes-app
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

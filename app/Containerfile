@@ -1,0 +1,38 @@
+# Containerfile
+# Purpose: OpenShift-ready packaging of the same application code.
+#
+# Red Hat Universal Base Image (UBI): freely redistributable, security-patched
+# by Red Hat, scanned and published with provenance on registry.access.redhat.com.
+FROM registry.access.redhat.com/ubi9/python-312:latest
+
+# Image metadata - used later for inventory, scanning and patch tracking.
+ARG APP_VERSION=1.0
+LABEL name="notes-app" \
+      version="${APP_VERSION}" \
+      summary="Workshop reference application" \
+      io.openshift.expose-services="8080:http"
+
+# The UBI Python image already uses /opt/app-root/src and user 1001.
+# Switch to root only to copy files and fix permissions.
+USER 0
+COPY requirements.txt app.py /opt/app-root/src/
+RUN pip install --no-cache-dir -r /opt/app-root/src/requirements.txt && \
+    mkdir -p /opt/app-root/data && \
+    # OpenShift runs containers with a random UID that is always in group 0.
+    # Give group 0 the same permissions as the owner so any UID can write.
+    chgrp -R 0 /opt/app-root/src /opt/app-root/data && \
+    chmod -R g=u /opt/app-root/src /opt/app-root/data
+
+# Only non-sensitive, environment-independent defaults live in the image.
+# Everything environment-specific is injected at runtime (ConfigMap / Secret).
+ENV APP_VERSION="${APP_VERSION}" \
+    DATA_DIR=/opt/app-root/data \
+    PORT=8080
+
+EXPOSE 8080
+
+# Never run as root. Any non-zero UID works; OpenShift will override it anyway.
+USER 1001
+
+# Production WSGI server; handles SIGTERM gracefully on pod shutdown.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--access-logfile", "-", "--graceful-timeout", "20", "app:app"]

@@ -1,0 +1,16 @@
+# service.yaml
+# Purpose: Stable in-cluster address for the notes-app pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/name: notes-app
+    app.kubernetes.io/part-of: notes-app
+spec:
+  selector:
+    app.kubernetes.io/name: notes-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

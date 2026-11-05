@@ -1,0 +1,6 @@
+name: openshift-app-lifecycle-workshop
+title: "OpenShift Application Lifecycle Workshop"
+version: master
+nav:
+  - modules/ROOT/nav.adoc
+start_page: ROOT:index.adoc

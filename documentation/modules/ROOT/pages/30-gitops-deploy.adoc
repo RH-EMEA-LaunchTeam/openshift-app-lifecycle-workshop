@@ -1,0 +1,41 @@
+= Session 3 - GitOps Deployment: Tenants Propose, the Platform Approves
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Deploy `notes-app` only through Git, and onboard a new tenant namespace with a pull request that the platform team approves instead of creating it by hand.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Deploy
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Structure the application repository with Kustomize: a base plus overlays per environment
+. Deploy with an Argo CD Application and watch self-healing revert a manual change
+. Use `configMapGenerator` so configuration changes roll out automatically
+. Tenant onboarding by pull request: namespace, quota, LimitRange, RBAC and Argo CD project from a template
+. Protect platform-owned files with CODEOWNERS and branch protection so only the platform team can approve them
+. Pull secrets from a secret store with the External Secrets Operator
+. Promote the same image digest from test to production through a pull request
+
+== What the session leaves behind
+
+* A tenant onboarding template and pull request workflow
+* A reference GitOps repository layout and promotion model
+
+== Questions to prepare
+
+* Which Git platform features (branch protection, CODEOWNERS, required reviews) are available to tenants?
+* Which namespace settings should be standard for every tenant, and which can tenants request?
+* Which secret store should the platform integrate with?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/[Red Hat OpenShift GitOps]

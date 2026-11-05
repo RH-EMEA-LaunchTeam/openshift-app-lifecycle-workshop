@@ -1,0 +1,39 @@
+= Session 4 - Run and Observe: Metrics, Alerts and Logs That Scale
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Give application teams visibility into their own workloads, and keep log volumes under control before they reach the central log platform.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Run
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Enable user workload monitoring and scrape application metrics with a ServiceMonitor
+. Create a PrometheusRule alert for the application and route it to the owning team
+. Explore application logs in the console
+. Forward logs with a ClusterLogForwarder, filtering and dropping noise before export
+. Agree on what the platform team monitors and what application teams monitor
+
+== What the session leaves behind
+
+* An observability baseline for every tenant
+* A log filtering and forwarding pattern
+
+== Questions to prepare
+
+* Which log destinations are in use, and what volume is acceptable?
+* Who receives application alerts today?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/monitoring/index[Monitoring]
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_logging/[Logging]

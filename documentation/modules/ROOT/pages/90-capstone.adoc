@@ -1,0 +1,37 @@
+= Session 9 - Capstone: The Full Monthly Lifecycle, End to End
+include::_attributes.adoc[]
+
+IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+
+Run the complete monthly cycle on the reference application in one go, using only the standard pipeline and GitOps, and capture the evidence.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| All stages
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Planned steps
+
+. Build the application through the pipeline
+. Deploy it through GitOps
+. Check metrics, logs and security status
+. Take a backup
+. Patch the base image, rebuild and redeploy
+. Verify security and operations
+. Restore from backup and verify
+. Review gaps, risks and the remediation backlog
+
+== What the session leaves behind
+
+* A validated reference implementation
+* An operational runbook
+* A reusable onboarding pattern for future applications
+
+== Questions to prepare
+
+* Which real application should go through the cycle after the reference application?
