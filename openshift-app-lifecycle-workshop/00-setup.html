@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
-    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/00-setup.html">
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/00-setup.html">
     <link rel="prev" href="index.html">
     <link rel="next" href="11-legacy-app.html">
     <meta name="generator" content="Antora 3.0.0">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -252,7 +252,7 @@
     <li><a href="00-setup.html">Cluster Setup</a></li>
   </ul>
 </nav>
-  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/00-setup.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/00-setup.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <article class="doc">
@@ -395,7 +395,7 @@ User:    admin</code></pre>
 # ── Workshop variables ───────────────────────────────────────────────────
 export LAB_API_URL="https://api.&lt;cluster-domain&gt;:6443"
 export NS="app-lifecycle"     # change it if several people share one cluster
-export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"
+export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
 
 # ── Context cleanup (idempotent) ─────────────────────────────────────────
 oc config delete-context lab 2&gt;/dev/null
@@ -465,7 +465,7 @@ oc config rename-context "$(oc config current-context)" lab</code></pre>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export LAB_API_URL="https://api.cluster-xxxxx.example.com:6443"
 export NS="app-lifecycle"
-export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"</code></pre>
+export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"</code></pre>
 </div>
 </div>
 </div>

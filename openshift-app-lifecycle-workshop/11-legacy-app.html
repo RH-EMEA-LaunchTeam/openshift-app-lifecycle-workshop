@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
-    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/11-legacy-app.html">
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/11-legacy-app.html">
     <link rel="prev" href="00-setup.html">
     <link rel="next" href="12-image-hygiene.html">
     <meta name="generator" content="Antora 3.0.0">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -253,7 +253,7 @@
     <li><a href="11-legacy-app.html">Step 1: The Legacy App</a></li>
   </ul>
 </nav>
-  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/11-legacy-app.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/11-legacy-app.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <article class="doc">
@@ -334,7 +334,7 @@
 <div class="content">
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -c PROBLEM app/Containerfile.legacy</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -c '^# PROBLEM' app/Containerfile.legacy</code></pre>
 </div>
 </div>
 <div class="listingblock console-output">
@@ -465,6 +465,9 @@ notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifec
 notes-legacy-6d9c7b8f5d-x2kqp   0/1     CrashLoopBackOff   2 (15s ago)   40s</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>The status alternates between <code>Error</code> (the container just exited) and <code>CrashLoopBackOff</code> (Kubernetes is waiting before the next restart). Both mean the same thing here.</p>
+</div>
 </div>
 </details>
 <hr>
@@ -485,25 +488,38 @@ notes-legacy-6d9c7b8f5d-x2kqp   0/1     CrashLoopBackOff   2 (15s ago)   40s</co
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">    with open(self.path, "a", encoding="utf-8"):
-         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PermissionError: [Errno 13] Permission denied: '/data/notes.txt'</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Now check the SCC and the user ID:</p>
+<p>Now check which SCC admitted the pod and which user ID it assigned:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -l app.kubernetes.io/name=notes-legacy -n "$NS" --context lab \
-  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
-oc debug deploy/notes-legacy -n "$NS" --context lab -- id</code></pre>
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{" runAsUser="}{.items[0].spec.containers[0].securityContext.runAsUser}{"\n"}'</code></pre>
 </div>
 </div>
 <div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restricted-v2
-uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restricted-v2 runAsUser=1000680000</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The image never asked for that UID. <code>restricted-v2</code> injected it into the pod spec from the namespace range.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Do not use <code>oc debug</code> to check the UID here. A debug pod is created by <strong>your</strong> user, and as a cluster administrator you are allowed to use more permissive SCCs, so the debug pod runs as root even though the real pods do not. Pods created by a Deployment are admitted with the namespace&#8217;s service account, which only has <code>restricted-v2</code>.
+</td>
+</tr>
+</table>
 </div>
 <details>
 <summary class="title">Verify: Understand what happened</summary>

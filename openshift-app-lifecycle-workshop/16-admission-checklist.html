@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
-    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/16-admission-checklist.html">
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/16-admission-checklist.html">
     <link rel="prev" href="15-stateless-and-scale.html">
     <link rel="next" href="20-build-pipelines.html">
     <meta name="generator" content="Antora 3.0.0">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -253,7 +253,7 @@
     <li><a href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a></li>
   </ul>
 </nav>
-  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/16-admission-checklist.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/16-admission-checklist.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <article class="doc">
@@ -405,11 +405,20 @@ notes-app      7    Requests and memory limit      PASS req=128Mi lim=256Mi
 notes-app      8    Stateless or explicit state    PASS no volumes (verify the app does not write local state)
 notes-app      10   Unprivileged ports             PASS
 notes-app      10   Survives pod loss (replicas)   PASS replicas=3
-notes-db       ...
+notes-db       1    Non-root, arbitrary UID        PASS scc=restricted-v2
+notes-db       2    Approved registry              PASS registry.redhat.io/rhel9/postgresql-16:latest
+notes-db       3    Image pinned by digest         WARN template uses a tag: registry.redhat.io/rhel9/postgresql-16:latest
+notes-db       4    No secrets in manifest         PASS
+notes-db       4    No secrets in image            WARN external image: inspect it with 'oc image info'
+notes-db       6    Health probes                  PASS readiness,liveness
+notes-db       7    Requests and memory limit      PASS req=256Mi lim=512Mi
+notes-db       8    Stateless or explicit state    WARN uses 1 PVC(s): needs a backup and restore plan
+notes-db       10   Unprivileged ports             PASS
+notes-db       10   Survives pod loss (replicas)   WARN replicas=1
 notes-legacy   1    Non-root, arbitrary UID        FAIL pods crash under scc=restricted-v2 (check logs for permission errors)
 notes-legacy   2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy
 notes-legacy   2    Approved base image            FAIL docker.io/library/python:3.12
-notes-legacy   3    Image pinned by digest         WARN template uses a tag: notes-legacy:latest
+notes-legacy   3    Image pinned by digest         PASS
 notes-legacy   4    No secrets in manifest         PASS
 notes-legacy   4    No secrets in image            FAIL image ENV contains: API_TOKEN
 notes-legacy   6    Health probes                  FAIL none
@@ -422,7 +431,10 @@ Items 5 (externalised configuration) and 9 (logs to stdout) need a manual review
 </div>
 </div>
 <div class="paragraph">
-<p>Look at the <code>notes-db</code> rows too: the database is a single replica with a PVC, so it gets warnings on items 8 and 10. That is expected. It is the reason state should live in a service that somebody explicitly owns and backs up.</p>
+<p>Look at the <code>notes-db</code> rows too. The database is a single replica with a PVC (warnings on items 8 and 10) and uses an external image by tag (warnings on items 3 and 4). That is expected for a stand-in database, and it is the reason state should live in a service that somebody explicitly owns, pins, patches and backs up.</p>
+</div>
+<div class="paragraph">
+<p>The legacy image passes item 3 because its ImageStream has local lookup enabled: OpenShift resolved <code>notes-legacy:latest</code> to a digest when the Deployment was created. Pinning is often something the platform can do for the tenant.</p>
 </div>
 <div class="admonitionblock note">
 <table>

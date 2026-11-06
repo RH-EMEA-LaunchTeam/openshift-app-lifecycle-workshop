@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
-    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/15-stateless-and-scale.html">
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/15-stateless-and-scale.html">
     <link rel="prev" href="14-health-and-resources.html">
     <link rel="next" href="16-admission-checklist.html">
     <meta name="generator" content="Antora 3.0.0">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -253,7 +253,7 @@
     <li><a href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a></li>
   </ul>
 </nav>
-  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/15-stateless-and-scale.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/15-stateless-and-scale.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <article class="doc">
@@ -371,15 +371,18 @@ done</code></pre>
 <div class="sect2">
 <h3 id="lose-data"><a class="anchor" href="#lose-data"></a>2. Lose data on pod restart</h3>
 <div class="paragraph">
-<p><strong>What:</strong> Delete one pod and check how many notes are left in total.</p>
+<p><strong>What:</strong> Delete the pod that holds the most notes and check what is left.</p>
 </div>
 <div class="paragraph">
 <p><strong>Why:</strong> Pods are replaced all the time: node maintenance, cluster upgrades, rescheduling, new image versions. With local state, every replacement is data loss.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">POD=$(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context lab -o name | head -1)
-oc exec "$POD" -n "$NS" --context lab -- wc -l /opt/app-root/data/notes.txt
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Pick the pod that holds the most notes
+POD=$(for p in $(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context lab -o name); do
+  echo "$(oc exec "$p" -n "$NS" --context lab -- wc -l /opt/app-root/data/notes.txt | awk '{print $1}') $p"
+done | sort -rn | head -1 | awk '{print $2}')
+echo "Deleting $POD"
 oc delete "$POD" -n "$NS" --context lab</code></pre>
 </div>
 </div>
@@ -411,7 +414,7 @@ pod/notes-app-5f7d9c8b6d-zt8wd: 0 notes</code></pre>
 <div class="sect2">
 <h3 id="database"><a class="anchor" href="#database"></a>3. Move state to a database</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (volume provisioning and database initialisation)</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~30 seconds (volume provisioning and database initialisation)</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Create the database credentials, deploy PostgreSQL, then apply the Deployment that connects to it through <code>DATABASE_URL</code>.</p>
@@ -457,7 +460,7 @@ The PostgreSQL image comes from <code>registry.redhat.io</code>, which requires 
 <div class="content">
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n "$NS" --context lab
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -l app.kubernetes.io/part-of=notes-app -n "$NS" --context lab
 for i in 1 2 3; do curl -sk "https://$ROUTE/api/info" | jq -r '"\(.pod) \(.storage)"'; done</code></pre>
 </div>
 </div>
@@ -525,7 +528,7 @@ done</code></pre>
 <div class="sect2">
 <h3 id="rolling-update"><a class="anchor" href="#rolling-update"></a>5. Zero-downtime rolling update</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~45 seconds</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Send a request every half second while restarting the Deployment, then count the HTTP status codes.</p>
@@ -535,7 +538,7 @@ done</code></pre>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">( for i in $(seq 1 80); do
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">( for i in $(seq 1 120); do
     curl -sk -o /dev/null -w '%{http_code}\n' "https://$ROUTE/api/notes"; sleep 0.5
   done ) &gt; /tmp/rollout-codes.txt &amp;
 
@@ -550,7 +553,7 @@ sort /tmp/rollout-codes.txt | uniq -c</code></pre>
 <div class="content">
 <div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">     80 200</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">     120 200</code></pre>
 </div>
 </div>
 <div class="paragraph">

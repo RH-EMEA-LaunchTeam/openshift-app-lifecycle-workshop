@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
-    <link rel="canonical" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/14-health-and-resources.html">
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/14-health-and-resources.html">
     <link rel="prev" href="13-config-and-secrets.html">
     <link rel="next" href="15-stateless-and-scale.html">
     <meta name="generator" content="Antora 3.0.0">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -253,7 +253,7 @@
     <li><a href="14-health-and-resources.html">Step 4: Health and Resources</a></li>
   </ul>
 </nav>
-  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/14-health-and-resources.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/14-health-and-resources.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <article class="doc">
@@ -509,6 +509,18 @@ notes-app-5f7d9c8b6d-k8w2n   1/1     Running   0          2m30s</code></pre>
   -n "$NS" --context lab --command -- sleep 3600
 oc get pod no-resources -n "$NS" --context lab -o jsonpath='{.spec.containers[0].resources}' | jq</code></pre>
 </div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>oc run</code> prints a <code>Warning: would violate PodSecurity "restricted:latest"</code> message. It is only a warning: the request does not set the security fields itself, and the <code>restricted-v2</code> SCC adds them when the pod is admitted. Pods from a proper Deployment manifest would normally set them explicitly.
+</td>
+</tr>
+</table>
 </div>
 <details>
 <summary class="title">Verify: The LimitRange filled in the gaps</summary>
