@@ -3,7 +3,7 @@ runtime:
 
 site:
   title: "OpenShift Application Lifecycle Workshop"
-  url: https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop
+  url: https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop
   start_page: openshift-app-lifecycle-workshop::index.adoc
 
 content:

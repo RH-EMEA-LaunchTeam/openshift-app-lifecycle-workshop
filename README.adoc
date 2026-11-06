@@ -6,7 +6,7 @@ Session 1 (onboarding-ready applications) is complete. Sessions 2 to 9 are plann
 
 == View the course
 
-The full course is published at: https://juanlu-sanz.github.io/openshift-app-lifecycle-workshop
+The full course is published at: https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop
 
 == Local development
 

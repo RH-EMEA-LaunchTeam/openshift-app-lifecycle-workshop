@@ -7,4 +7,4 @@
 :ubi-version: 9
 :python-image: registry.access.redhat.com/ubi9/python-312
 :postgresql-image: registry.redhat.io/rhel9/postgresql-16
-:repo-url: https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop
+:repo-url: https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop

@@ -83,7 +83,7 @@ Create `myenv.sh` at the root of the repository (or in your home directory if yo
 # ── Workshop variables ───────────────────────────────────────────────────
 export LAB_API_URL="https://api.<cluster-domain>:6443"
 export NS="app-lifecycle"     # change it if several people share one cluster
-export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"
+export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
 
 # ── Context cleanup (idempotent) ─────────────────────────────────────────
 oc config delete-context lab 2>/dev/null
@@ -130,7 +130,7 @@ grep -E '^export' myenv.sh
 ----
 export LAB_API_URL="https://api.cluster-xxxxx.example.com:6443"
 export NS="app-lifecycle"
-export GIT_REPO_URL="https://github.com/juanlu-sanz/openshift-app-lifecycle-workshop.git"
+export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
 ----
 ====
 
