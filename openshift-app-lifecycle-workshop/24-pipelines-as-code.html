@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/24-pipelines-as-code.html">
+    <link rel="prev" href="23-scan-gate.html">
+    <link rel="next" href="25-vendor-image-intake.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 2: Build Pipelines</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Overview and Catch-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="21-pipelines-basics.html">Step 1: Pipelines Basics</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#catalogue">The Supported Task Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#hello-task">Your First Task</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#what-ran">What Actually Ran</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#workspace">The Shared Workspace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="22-source-pipeline.html">Step 2: Source to Image</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#read-pipeline">Read the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#run-pipeline">Run the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#rollout">Automatic Rollout</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#trace">Trace a Pod to Its Source</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="23-scan-gate.html">Step 3: Scan Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#add-gate">Add the Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-pass">UBI Image: Passes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-fail">Legacy Image: Blocked</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 2: Build Pipelines</li>
+    <li><a href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/24-pipelines-as-code.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+This step is optional in the hands-on window. It needs a GitHub account and about 30 minutes.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>So far someone has started every pipeline with <code>oc create</code>. This step connects your own fork of the workshop repository to your namespace with <strong>Pipelines as Code</strong>, the Git-native trigger in OpenShift Pipelines. The pipeline definitions live in the repository, next to the code, in the <code>.tekton/</code> directory:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <strong>pull request</strong> that changes <code>app/</code> builds and scans the image, and reports the result as a check on the pull request. It does <strong>not</strong> promote.</p>
+</li>
+<li>
+<p>A <strong>merge (push) to main</strong> builds, scans and promotes, which rolls out the application.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This is the same pull-request workflow proposed for tenant onboarding in Session 3: changes are reviewed in Git, and what reaches the cluster is what was approved.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="23-scan-gate.html" class="xref page">Step 3</a> completed: <code>notes-app-build</code> (version 2) exists in your namespace</p>
+</li>
+<li>
+<p>A GitHub account, and <code>$GITHUB_FORK_URL</code> and <code>$PAC_WEBHOOK_URL</code> set in <code>myenv.sh</code> (see <a href="00-setup.html#export-variables" class="xref page">setup</a>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text"> your fork on GitHub                         your namespace
+ -------------------                         --------------
+ push / pull request  --- webhook ---&gt;  Pipelines as Code controller
+ .tekton/*.yaml                              |  matches Repository "notes-app"
+                                             v
+                                       PipelineRun of notes-app-build
+                                             |
+ commit status / check  &lt;-- report ----------+</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Object</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Repository</code> (in your namespace)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Links one Git repository URL to one namespace, and names the Secret with the Git token</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>.tekton/notes-app-pull-request.yaml</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PipelineRun template for pull requests (<code>promote: "false"</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>.tekton/notes-app-push.yaml</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PipelineRun template for pushes to <code>main</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>github-pac</code> Secret</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A GitHub token so Pipelines as Code can report results, and the webhook secret that proves events come from GitHub</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Pipelines as Code fills in <code>{{ repo_url }}</code> and <code>{{ revision }}</code> with the repository and the exact commit of the event.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This step uses a webhook and a personal token, so each participant works independently. A platform team usually installs one <strong>GitHub App</strong> for the whole organisation instead (<code>tkn pac bootstrap</code>). Then tenants only create the <code>Repository</code> object, and no personal tokens are involved.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="fork"><a class="anchor" href="#fork"></a>1. Fork the repository and create a token</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Fork the workshop repository into your GitHub account, then create a fine-grained personal access token for that fork only.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need a repository you can push to, and Pipelines as Code needs a token to report pipeline results back to it.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open <a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop">the workshop repository</a> and click <strong>Fork</strong>.</p>
+</li>
+<li>
+<p>In GitHub, go to <strong>Settings</strong> &gt; <strong>Developer settings</strong> &gt; <strong>Fine-grained tokens</strong> &gt; <strong>Generate new token</strong>.</p>
+</li>
+<li>
+<p><strong>Repository access</strong>: <strong>Only select repositories</strong>, then pick your fork.</p>
+</li>
+<li>
+<p><strong>Permissions</strong>: <strong>Commit statuses</strong>, <strong>Pull requests</strong> and <strong>Issues</strong> read and write. <strong>Contents</strong> read-only. <strong>Metadata</strong> read-only is added automatically.</p>
+</li>
+<li>
+<p>Generate the token and keep it in your shell only:</p>
+</li>
+</ol>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">read -rs GITHUB_TOKEN &amp;&amp; export GITHUB_TOKEN</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The fork and token work</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">echo "$GITHUB_FORK_URL"
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/${GITHUB_FORK_URL#https://github.com/}" | jq -r .full_name</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">https://github.com/&lt;your-user&gt;/openshift-app-lifecycle-workshop
+&lt;your-user&gt;/openshift-app-lifecycle-workshop</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="repository"><a class="anchor" href="#repository"></a>2. Connect the fork to your namespace</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create the <code>github-pac</code> Secret and the <code>Repository</code> object.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The <code>Repository</code> object tells Pipelines as Code which namespace runs pipelines for which Git URL. One repository maps to one namespace, which keeps tenants apart.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export WEBHOOK_SECRET=$(openssl rand -hex 20)
+oc create secret generic github-pac \
+  --from-literal=provider.token="$GITHUB_TOKEN" \
+  --from-literal=webhook.secret="$WEBHOOK_SECRET" \
+  -n "$NS" --context lab
+envsubst &lt; 24-pipelines-as-code/repository.yaml | oc apply -f - -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The Repository exists</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get repository notes-app -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME        URL                                                            SUCCEEDED   REASON   STARTTIME   COMPLETIONTIME
+notes-app   https://github.com/&lt;your-user&gt;/openshift-app-lifecycle-workshop</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The status columns stay empty until the first event arrives.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="webhook"><a class="anchor" href="#webhook"></a>3. Add the webhook to your fork</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Tell GitHub to send push and pull request events to the Pipelines as Code controller.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The webhook is how the cluster hears about changes. The shared secret lets the controller reject events that do not come from GitHub.</p>
+</div>
+<div class="paragraph">
+<p>Print the values you need:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">echo "Payload URL: $PAC_WEBHOOK_URL"
+echo "Secret:      $WEBHOOK_SECRET"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In your fork on GitHub: <strong>Settings</strong> &gt; <strong>Webhooks</strong> &gt; <strong>Add webhook</strong>:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Payload URL</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The value of <code>$PAC_WEBHOOK_URL</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Content type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>application/json</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secret</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The value of <code>$WEBHOOK_SECRET</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SSL verification</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Disable</strong> (the demo cluster uses a self-signed certificate; never do this in production)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Events</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Let me select individual events</strong>: <strong>Pull requests</strong> and <strong>Pushes</strong></p></td>
+</tr>
+</tbody>
+</table>
+<details>
+<summary class="title">Verify: GitHub reached the controller</summary>
+<div class="content">
+<div class="paragraph">
+<p>In <strong>Settings</strong> &gt; <strong>Webhooks</strong>, open the webhook and select <strong>Recent Deliveries</strong>. The initial <code>ping</code> event shows a green tick and response code <code>200</code>.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="pull-request"><a class="anchor" href="#pull-request"></a>4. Open a pull request</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~3 minutes for the pipeline</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Change something under <code>app/</code> on a new branch and open a pull request against <code>main</code> <strong>in your fork</strong>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The pull request is where the review happens. The pipeline result shows next to the code, before anyone merges.</p>
+</div>
+<div class="paragraph">
+<p>Use the GitHub web editor, so you need no Git credentials on your workstation:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In your fork, open <code>app/Containerfile</code> and click the pencil icon (<strong>Edit this file</strong>).</p>
+</li>
+<li>
+<p>Change the <code>summary</code> label, for example to <code>summary="Workshop reference application, built by Pipelines as Code"</code>.</p>
+</li>
+<li>
+<p>Click <strong>Commit changes</strong>, select <strong>Create a new branch for this commit and start a pull request</strong>, and confirm.</p>
+</li>
+<li>
+<p>On the <strong>Open a pull request</strong> page, check that the <strong>base repository</strong> is <strong>your fork</strong> (not the upstream repository) and the base branch is <code>main</code>, then click <strong>Create pull request</strong>.</p>
+</li>
+</ol>
+</div>
+<details>
+<summary class="title">Verify: The pull request runs the pipeline without promoting</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipelinerun list -n "$NS" --context lab | head -2</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                           STARTED          DURATION   STATUS
+notes-app-pull-request-8r2lp   40 seconds ago   ---        Running</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When it finishes, the pull request in GitHub shows a passed check. The <code>promote</code> Task was skipped, so the application version did not change:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipelinerun describe --last -n "$NS" --context lab | grep -A6 -i 'skipped'</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="merge"><a class="anchor" href="#merge"></a>5. Merge and watch the rollout</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Merge the pull request in GitHub.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The merge is the approval. The push to <code>main</code> that it creates triggers the promoting pipeline, which rolls out the application.</p>
+</div>
+<details>
+<summary class="title">Verify: The merge commit is running</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipelinerun logs --last -f -n "$NS" --context lab
+oc rollout status deploy/notes-app -n "$NS" --context lab
+curl -sk "https://$ROUTE/api/info" | jq -r .version
+git ls-remote "$GITHUB_FORK_URL" refs/heads/main</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The version reported by the application is the merge commit on <code>main</code> of your fork.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_3"><a class="anchor" href="#_what_this_solves_compared_to_step_3"></a>What This Solves (Compared to Step 3)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Step 3</th>
+<th class="tableblock halign-left valign-top">Now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A person starts each run</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Git events start runs</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pipeline definition only in the cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger definitions versioned with the code in <code>.tekton/</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Results only in the cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Results reported on the pull request, where reviewers look</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Anything run by hand can be promoted</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only merged code is promoted</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images that are delivered, not built from source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="25-vendor-image-intake.html" class="xref page">Step 5: Vendor Image Intake</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deployment manifests are still applied by hand</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Session 3: GitOps deployment with Argo CD</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/">Red Hat OpenShift Pipelines</a> (see <strong>Pipelines as Code</strong>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pipelines as Code with a webhook (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Each tenant connects their own repository. Good for a workshop and for a handful of repositories.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pipelines as Code with a GitHub App</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The recommended setup for an organisation: one App installed by the platform team, no personal tokens, results shown as GitHub Checks.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tekton Triggers (EventListener, TriggerBinding, TriggerTemplate)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The lower-level building blocks. More flexible, more YAML, and the pipeline definition stays in the cluster rather than next to the code.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete repository notes-app -n "$NS" --context lab --ignore-not-found
+oc delete secret github-pac -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Delete the webhook in your fork (<strong>Settings</strong> &gt; <strong>Webhooks</strong>), and delete the personal access token in GitHub when you no longer need it.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="23-scan-gate.html">Step 3: Scan Gate</a></span>
+  <span class="next"><a href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

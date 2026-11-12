@@ -6,7 +6,7 @@
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
     <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/20-build-pipelines.html">
     <link rel="prev" href="16-admission-checklist.html">
-    <link rel="next" href="30-gitops-deploy.html">
+    <link rel="next" href="21-pipelines-basics.html">
     <meta name="generator" content="Antora 3.0.0">
     <link rel="stylesheet" href="../_/css/site.css">
   </head>
@@ -206,11 +206,116 @@
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <span class="nav-text">Upcoming Sessions</span>
+    <span class="nav-text">Session 2: Build Pipelines</span>
 <ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="20-build-pipelines.html">Session 2: Build Pipelines</a>
+    <a class="nav-link" href="20-build-pipelines.html">Overview and Catch-Up</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="21-pipelines-basics.html">Step 1: Pipelines Basics</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#catalogue">The Supported Task Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#hello-task">Your First Task</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#what-ran">What Actually Ran</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#workspace">The Shared Workspace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="22-source-pipeline.html">Step 2: Source to Image</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#read-pipeline">Read the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#run-pipeline">Run the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#rollout">Automatic Rollout</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#trace">Trace a Pod to Its Source</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="23-scan-gate.html">Step 3: Scan Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#add-gate">Add the Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-pass">UBI Image: Passes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-fail">Legacy Image: Blocked</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
   </li>
@@ -249,8 +354,8 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
-    <li>Upcoming Sessions</li>
-    <li><a href="20-build-pipelines.html">Session 2: Build Pipelines</a></li>
+    <li>Session 2: Build Pipelines</li>
+    <li><a href="20-build-pipelines.html">Overview and Catch-Up</a></li>
   </ul>
 </nav>
   <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/20-build-pipelines.adoc">Edit this Page</a></div>
@@ -260,20 +365,24 @@
 <h1 class="page">OpenShift Application Lifecycle Workshop</h1>
 <div id="preamble">
 <div class="sectionbody">
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>In Session 1 you built images by hand with <code>oc start-build</code> and judged them against the admission checklist by reading YAML. This session turns both into pipelines that run the same way every time, for every team:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Applications you build from source</strong> go through a pipeline: clone, build, scan, and promote only if the scan passes.</p>
+</li>
+<li>
+<p><strong>Images you cannot rebuild</strong>, usually delivered by a vendor, go through an <strong>intake</strong> pipeline: inspect, scan, test under the platform&#8217;s default security, then approve, fix or reject.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>Replace the manual <code>oc start-build</code> from Session 1 with a repeatable OpenShift Pipelines (Tekton) pipeline, and define how third-party images enter the platform.</p>
+<p>On most platforms that host vendor software, the second pipeline matters more. This session gives it the most time.</p>
+</div>
+<div class="paragraph">
+<p>The pipelines run on <strong>OpenShift Pipelines</strong>, Red Hat&#8217;s supported distribution of the Tekton project, and scan with <strong>Red Hat Advanced Cluster Security (ACS)</strong>. If your teams already use another CI system, the same stages and gates apply. Only the tool changes.</p>
 </div>
 </div>
 </div>
@@ -294,51 +403,206 @@ This session is planned. Its content will be finalised after the previous sessio
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Build</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The hardened <code>notes-app</code> from <a href="15-stateless-and-scale.html" class="xref page">Session 1</a> and the <a href="16-admission-checklist.html" class="xref page">admission checklist</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hardened <code>notes-app</code> from <a href="15-stateless-and-scale.html" class="xref page">Session 1, Step 5</a>, the legacy image from <a href="11-legacy-app.html" class="xref page">Step 1</a> and the <a href="16-admission-checklist.html" class="xref page">admission checklist</a></p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_planned_steps"><a class="anchor" href="#_planned_steps"></a>Planned steps</h2>
+<h2 id="_steps"><a class="anchor" href="#_steps"></a>Steps</h2>
 <div class="sectionbody">
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Install OpenShift Pipelines and explore Tasks, Pipelines and PipelineRuns</p>
-</li>
-<li>
-<p>Build <code>notes-app</code> from Git: clone, build with Buildah, push to the registry</p>
-</li>
-<li>
-<p>Add an image scan step and fail the pipeline on critical vulnerabilities</p>
-</li>
-<li>
-<p>Trigger the pipeline on a Git push with a webhook</p>
-</li>
-<li>
-<p>Import a vendor-delivered image: pull, scan, retag and promote into the approved registry</p>
-</li>
-<li>
-<p>Offer the pipeline as a reusable template for tenants (pipeline as a service)</p>
-</li>
-</ol>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 12.5%;">
+<col style="width: 37.5%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Step</th>
+<th class="tableblock halign-left valign-top">Page</th>
+<th class="tableblock halign-left valign-top">What you get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="21-pipelines-basics.html" class="xref page">Pipelines Basics</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tasks, TaskRuns, Pipelines and the Red Hat supported Task catalogue</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="22-source-pipeline.html" class="xref page">Source to Image</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A pipeline that builds <code>notes-app</code> from Git, tags it with the commit and rolls it out</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="23-scan-gate.html" class="xref page">Scan Gate</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images with critical vulnerabilities never reach the running Deployment</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="24-pipelines-as-code.html" class="xref page">Pipelines as Code</a> (optional)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pull requests build and scan, merges promote, with results reported in GitHub</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="25-vendor-image-intake.html" class="xref page">Vendor Image Intake</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An intake pipeline and four remediation levels for images that run as root</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="26-pipeline-service.html" class="xref page">Pipelines as a Service</a> (optional)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The platform team publishes the pipelines once and every tenant reuses them</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_what_the_session_leaves_behind"><a class="anchor" href="#_what_the_session_leaves_behind"></a>What the session leaves behind</h2>
+<h2 id="_before_you_start"><a class="anchor" href="#_before_you_start"></a>Before you start</h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>A reference pipeline tenants can reuse</p>
-</li>
-<li>
-<p>A documented path for third-party images into the approved registry</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>This session runs on a fresh cluster that several participants share. Each participant has their own user and their own namespace, with admin rights on that namespace only, like a real tenant. The instructor has already done the platform-side setup.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Prepared by the platform team (instructor)</th>
+<th class="tableblock halign-left valign-top">Why it is not part of your steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift Pipelines operator</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster-wide component, installed once by the platform team</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ACS Central and SecuredCluster, plus an <code>acs-api</code> Secret in your namespace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The security team owns the scanner and hands each tenant a token for its CI</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">LimitRange and ResourceQuota on your namespace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform guardrails from <a href="14-health-and-resources.html#tenant-guardrails" class="xref page">Session 1, Step 4</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>platform-pipelines</code> namespace with shared Tasks and Pipelines</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Used in <a href="26-pipeline-service.html" class="xref page">Step 6</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To prepare your own cluster, run <code>20-session-prep/platform-setup.sh</code> as cluster-admin. Its header explains the arguments.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_1_complete_the_setup_page"><a class="anchor" href="#_1_complete_the_setup_page"></a>1. Complete the setup page</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Follow <a href="00-setup.html" class="xref page">Cluster Setup</a> with your own user and namespace, including the Session 2 variables.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Every command in this session uses <code>$NS</code>, <code>$GIT_REPO_URL</code> and the <code>lab</code> context. Step 4 also needs <code>$GITHUB_FORK_URL</code> and <code>$PAC_WEBHOOK_URL</code>.</p>
+</div>
+<details>
+<summary class="title">Verify: Context, namespace and tools</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context lab
+oc get project "$NS" --context lab -o name
+tkn version --component client</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">user1
+project.project.openshift.io/app-lifecycle-user1
+Client version: 0.4x.x</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If <code>tkn</code> is missing, use the OpenShift <strong>Web Terminal</strong>, which includes it.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="catch-up"><a class="anchor" href="#catch-up"></a>2. Catch up to the end of Session 1</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~3 minutes</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Run the catch-up script. It builds both images and deploys <code>notes-app</code> in the state it had at the end of <a href="15-stateless-and-scale.html" class="xref page">Session 1, Step 5</a>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is a new cluster, so nothing from Session 1 exists yet. The script needs only admin rights on your namespace.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">./20-session-prep/catch-up.sh "$NS" lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then export the route and save it in <code>myenv.sh</code>:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export ROUTE=$(oc get route notes-app -n "$NS" --context lab -o jsonpath='{.spec.host}')
+echo "export ROUTE=$ROUTE" &gt;&gt; myenv.sh</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The legacy image pulls its base from Docker Hub. If the script stops with <code>toomanyrequests</code>, wait a few minutes and run it again. It is safe to re-run.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: notes-app answers with version 1.0</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk "https://$ROUTE/api/info" | jq '{version, storage}'
+oc get istag -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">{
+  "version": "1.0",
+  "storage": "postgresql"
+}
+NAME                  IMAGE REFERENCE                                   UPDATED
+notes-app:latest      image-registry.openshift-image-registry.svc:5000/...   1 minute ago
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/...   1 minute ago</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Version <code>1.0</code> comes from the hand-started build. After Step 2 the version is a Git commit.</p>
+</div>
+</div>
+</details>
+<hr>
 </div>
 </div>
 </div>
@@ -351,10 +615,13 @@ This session is planned. Its content will be finalised after the previous sessio
 <p>Which registry will be the long-term source of truth for images, and how does it relate to the cluster&#8217;s internal registry?</p>
 </li>
 <li>
-<p>Do vendors deliver source, Containerfiles, images or image archives?</p>
+<p>Do vendors deliver source, Containerfiles, images or image archives? For how many of your applications each?</p>
 </li>
 <li>
-<p>Who owns the pipeline definitions: the platform team or the tenants?</p>
+<p>Who owns the pipeline definitions: the platform team, the tenants, or both (central templates, tenant-specific parameters)?</p>
+</li>
+<li>
+<p>Who may accept a vulnerability risk for a vendor image, and for how long?</p>
 </li>
 </ul>
 </div>
@@ -366,7 +633,10 @@ This session is planned. Its content will be finalised after the previous sessio
 <div class="ulist">
 <ul>
 <li>
-<p><a href="https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/">OpenShift Pipelines</a></p>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/">Red Hat OpenShift Pipelines</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/">Red Hat Advanced Cluster Security for Kubernetes</a></p>
 </li>
 </ul>
 </div>
@@ -374,7 +644,7 @@ This session is planned. Its content will be finalised after the previous sessio
 </div>
 <nav class="pagination">
   <span class="prev"><a href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a></span>
-  <span class="next"><a href="30-gitops-deploy.html">Session 3: GitOps Deployment</a></span>
+  <span class="next"><a href="21-pipelines-basics.html">Step 1: Pipelines Basics</a></span>
 </nav>
 </article>
 <aside class="toc sidebar" data-title="Contents" data-levels="2">

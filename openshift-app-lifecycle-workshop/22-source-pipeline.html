@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/22-source-pipeline.html">
+    <link rel="prev" href="21-pipelines-basics.html">
+    <link rel="next" href="23-scan-gate.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 2: Build Pipelines</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Overview and Catch-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="21-pipelines-basics.html">Step 1: Pipelines Basics</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#catalogue">The Supported Task Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#hello-task">Your First Task</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#what-ran">What Actually Ran</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#workspace">The Shared Workspace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="22-source-pipeline.html">Step 2: Source to Image</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#read-pipeline">Read the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#run-pipeline">Run the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#rollout">Automatic Rollout</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#trace">Trace a Pod to Its Source</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="23-scan-gate.html">Step 3: Scan Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#add-gate">Add the Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-pass">UBI Image: Passes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-fail">Legacy Image: Blocked</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 2: Build Pipelines</li>
+    <li><a href="22-source-pipeline.html">Step 2: Source to Image</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/22-source-pipeline.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Session 1 the image was built from whatever was in your local <code>app/</code> directory, and the version was whatever someone typed into the BuildConfig. This step replaces that with a pipeline: it clones a specific Git revision, builds with Buildah, tags the image with the <strong>Git commit</strong>, and promotes that exact image to <code>notes-app:latest</code>. The Deployment from Session 1 already watches <code>notes-app:latest</code>, so a successful pipeline run is also a rollout.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="21-pipelines-basics.html" class="xref page">Step 1</a> completed: the <code>pipeline-ws</code> claim exists</p>
+</li>
+<li>
+<p><code>$GIT_REPO_URL</code> and <code>$ROUTE</code> set</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text"> clone (git-clone)  --&gt;  build (buildah)  --&gt;  promote (promote-image)
+ commit 3f2c1ab          notes-app:3f2c1ab      notes-app:latest -&gt; 3f2c1ab
+                                                       |
+                                     Deployment trigger: rolling update</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Task</th>
+<th class="tableblock halign-left valign-top">Source</th>
+<th class="tableblock halign-left valign-top">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>clone</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Red Hat catalogue (<code>git-clone</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clones the repository at <code>git-revision</code> and returns the exact <code>COMMIT</code> as a result</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>build</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Red Hat catalogue (<code>buildah</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Builds <code>app/Containerfile</code> without root, passes the commit as <code>APP_VERSION</code>, adds <code>vcs-ref</code> and <code>vcs-url</code> labels, and pushes <code>notes-app:&lt;commit&gt;</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>promote</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This repository (<code>promote-image</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Points <code>notes-app:latest</code> at <code>notes-app:&lt;commit&gt;</code>. Skipped when <code>promote</code> is not <code>"true"</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Building and promoting are deliberately separate. Every build is kept under its commit tag, and <strong>promotion</strong> is a separate decision. Step 3 puts a scan gate between the two.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="read-pipeline"><a class="anchor" href="#read-pipeline"></a>1. Read the pipeline</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Read the Pipeline definition and find the three Tasks and how results flow between them.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> <code>$(tasks.clone.results.COMMIT)</code> is what makes the image traceable. The build never decides its own version: it uses the commit the clone actually checked out.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat 22-source-pipeline/pipeline.yaml</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Find the commit in three places</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -n 'tasks.clone.results.COMMIT' 22-source-pipeline/pipeline.yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The commit is used for the image tag, the <code>APP_VERSION</code> build argument, the <code>vcs-ref</code> label and the promote source. The same value ends up in the registry, in the image metadata and in the running application.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="create-pipeline"><a class="anchor" href="#create-pipeline"></a>2. Create the Task and the Pipeline</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create the <code>promote-image</code> Task and the <code>notes-app-build</code> Pipeline in your namespace.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> <code>git-clone</code> and <code>buildah</code> come from the catalogue. Only the platform-specific step is defined here.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 22-source-pipeline/promote-task.yaml -f 22-source-pipeline/pipeline.yaml \
+  -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The Pipeline is valid</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipeline describe notes-app-build -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output lists the parameters with their defaults, the <code>source</code> workspace and the three Tasks (<code>clone</code>, <code>build</code>, <code>promote</code>).</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="run-pipeline"><a class="anchor" href="#run-pipeline"></a>3. Run the pipeline</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2-3 minutes</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Start a PipelineRun against the workshop repository and follow its logs.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> From now on this is the only way an image reaches <code>notes-app:latest</code>. Nobody uploads a local directory any more.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst &lt; 22-source-pipeline/pipelinerun.yaml | oc create -f - -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The same run is easier to follow in the web console: <strong>Pipelines</strong> &gt; <strong>PipelineRuns</strong> in your project shows each Task as a box, with its logs one click away.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: The run succeeded and the commit tag exists</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipelinerun list -n "$NS" --context lab
+oc get istag -n "$NS" --context lab | grep '^notes-app:'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                    STARTED         DURATION   STATUS
+notes-app-build-4kq9z   3 minutes ago   2m10s      Succeeded
+
+notes-app:3f2c1ab9e8...   image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:9b1e...   1 minute ago
+notes-app:latest          image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:9b1e...   1 minute ago</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both tags point to the same digest.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="rollout"><a class="anchor" href="#rollout"></a>4. Watch the automatic rollout</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Check the version the application reports.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Nobody ran <code>oc rollout</code>. The image trigger on the Deployment from Session 1 saw <code>notes-app:latest</code> move and started a zero-downtime rolling update.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc rollout status deploy/notes-app -n "$NS" --context lab
+curl -sk "https://$ROUTE/api/info" | jq -r .version</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The running version is the Git commit</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git ls-remote "$GIT_REPO_URL" refs/heads/main</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">3f2c1ab9e8...    refs/heads/main</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The version shown by the application and the commit on <code>main</code> are identical.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="trace"><a class="anchor" href="#trace"></a>5. Trace a running pod back to its source</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Start from a running pod and work back to the Git commit and repository it was built from.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is checklist item 3, <strong>images are traceable</strong>. During an incident or a CVE review, "which code is running in production?" must take seconds, not a meeting.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">POD_IMAGE=$(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context lab \
+  -o jsonpath='{.items[0].status.containerStatuses[0].imageID}')
+echo "$POD_IMAGE"
+oc get istag notes-app:latest -n "$NS" --context lab \
+  -o jsonpath='{.image.dockerImageMetadata.Config.Labels.vcs-url}{"\n"}{.image.dockerImageMetadata.Config.Labels.vcs-ref}{"\n"}'</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Pod digest, image labels and commit match</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-app@sha256:9b1e...
+https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git
+3f2c1ab9e8...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The pod runs a digest, the digest carries the repository and commit as labels, and the commit is a line in Git history.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_session_1"><a class="anchor" href="#_what_this_solves_compared_to_session_1"></a>What This Solves (Compared to Session 1)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Session 1</th>
+<th class="tableblock halign-left valign-top">Now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Built from a local directory, whatever its state</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Built from a specific Git commit</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Version typed in by hand</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Version, tag and labels are the commit, automatically</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Build and rollout are separate manual actions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A successful run promotes and rolls out</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any image that builds gets promoted, vulnerable or not</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="23-scan-gate.html" class="xref page">Step 3: Scan Gate</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Someone still has to start the pipeline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="24-pipelines-as-code.html" class="xref page">Step 4: Pipelines as Code</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/">Red Hat OpenShift Pipelines</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift Pipelines (this workshop)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Runs inside the cluster as normal pods, under tenant quota and SCCs. Supported by Red Hat and included in the OpenShift subscription.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">BuildConfig with a Git source and webhook</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simpler for a single image, but no scan gate, no multi-step logic and no promotion step. Fine for prototypes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An external CI system (GitHub Actions, GitLab CI, Jenkins)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A valid choice if the organisation already standardised on it. The pipeline stages and the promote-only-after-gate rule stay the same; the CI needs a registry credential and network access to the cluster.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Removes the pipeline objects and runs. The application keeps running the last promoted image.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete pipelinerun -l tekton.dev/pipeline=notes-app-build -n "$NS" --context lab --ignore-not-found
+oc delete -f 22-source-pipeline/pipeline.yaml -f 22-source-pipeline/promote-task.yaml \
+  -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Skip the reset if you continue with Step 3, which updates this pipeline in place.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="21-pipelines-basics.html">Step 1: Pipelines Basics</a></span>
+  <span class="next"><a href="23-scan-gate.html">Step 3: Scan Gate</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

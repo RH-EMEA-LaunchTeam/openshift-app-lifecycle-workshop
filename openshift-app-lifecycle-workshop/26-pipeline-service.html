@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/26-pipeline-service.html">
+    <link rel="prev" href="25-vendor-image-intake.html">
+    <link rel="next" href="30-gitops-deploy.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 2: Build Pipelines</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Overview and Catch-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="21-pipelines-basics.html">Step 1: Pipelines Basics</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#catalogue">The Supported Task Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#hello-task">Your First Task</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#what-ran">What Actually Ran</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#workspace">The Shared Workspace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="22-source-pipeline.html">Step 2: Source to Image</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#read-pipeline">Read the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#run-pipeline">Run the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#rollout">Automatic Rollout</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#trace">Trace a Pod to Its Source</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="23-scan-gate.html">Step 3: Scan Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#add-gate">Add the Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-pass">UBI Image: Passes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-fail">Legacy Image: Blocked</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 2: Build Pipelines</li>
+    <li><a href="26-pipeline-service.html">Step 6: Pipelines as a Service</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/26-pipeline-service.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+This step is optional in the hands-on window. It takes about 15 minutes.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In Steps 2 to 5 every Task and Pipeline was copied into your namespace. With a hundred applications, that means a hundred copies of the scan Task, each slowly drifting from the others. This step uses the pipelines that the platform team has published <strong>once</strong>, in a shared <code>platform-pipelines</code> namespace. Tenants reference them by name with the cluster resolver and keep only their PipelineRuns.</p>
+</div>
+<div class="paragraph">
+<p>This also answers "we have a hundred vendors with different needs": tenants do not write pipelines. They choose one of a small number of maintained templates (build from source, intake a vendor image) and set parameters.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="25-vendor-image-intake.html" class="xref page">Step 5</a> completed: <code>notes-legacy-relayered:latest</code> exists</p>
+</li>
+<li>
+<p>The <code>platform-pipelines</code> namespace was prepared by the platform team (<code>20-session-prep/platform-setup.sh</code>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text"> platform-pipelines (platform team owns)        your namespace (tenant owns)
+ ---------------------------------------        ----------------------------
+ Pipeline source-build                    &lt;---  PipelineRun  (pipelineRef: resolver cluster)
+ Pipeline vendor-intake                   &lt;---  PipelineRun
+ Tasks: acs-image-scan, image-inspect,          pipeline-ws PVC, acs-api Secret, ImageStreams
+        arbitrary-uid-test, intake-gate,
+        promote-image</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The cluster resolver fetches the Pipeline and its Tasks at run time. <strong>The pods still run in your namespace</strong>, with your quota, your service account and your images. The platform team owns the definitions; the tenant owns the runs and their results.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Who changes it</th>
+<th class="tableblock halign-left valign-top">How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform team: a new scan rule or a new intake check</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Changes the Task in <code>platform-pipelines</code> once. Every tenant&#8217;s next run uses it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tenant: a different Containerfile, image name or Git repository</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Changes parameters in its own PipelineRun. No change to shared definitions.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="catalogue"><a class="anchor" href="#catalogue"></a>1. Browse the shared catalogue</h3>
+<div class="paragraph">
+<p><strong>What:</strong> List the Pipelines and Tasks in <code>platform-pipelines</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The catalogue is the platform&#8217;s offer to tenants, like the service catalogue for infrastructure. You can read it, but not change it.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipeline list -n platform-pipelines --context lab
+tkn task list -n platform-pipelines --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Two pipelines, five tasks, read-only</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME            AGE
+source-build    1 day ago
+vendor-intake   1 day ago
+NAME                 DESCRIPTION   AGE
+acs-image-scan                     1 day ago
+arbitrary-uid-test                 1 day ago
+image-inspect                      1 day ago
+intake-gate                        1 day ago
+promote-image                      1 day ago</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc auth can-i update pipelines -n platform-pipelines --context lab</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">no</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="compare"><a class="anchor" href="#compare"></a>2. Compare a central pipeline with your copy</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Compare the published <code>source-build</code> with your <code>notes-app-build</code> from Step 3.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> They are the same pipeline. Only the <code>taskRef</code> blocks differ: they point to the central namespace instead of your own.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">diff 23-scan-gate/pipeline.yaml 26-pipeline-service/source-build-pipeline.yaml</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Only references changed</summary>
+<div class="content">
+<div class="paragraph">
+<p>Apart from the header comment and the name, the differences are <code>taskRef</code> blocks like this one:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: acs-image-scan}
+          - {name: namespace, value: platform-pipelines}</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="run-central"><a class="anchor" href="#run-central"></a>3. Run the central pipelines from your namespace</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~5 minutes</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Run <code>source-build</code> for <code>notes-app</code>, and <code>vendor-intake</code> for the re-layered vendor image. Both are referenced from <code>platform-pipelines</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is what onboarding a new application looks like for a tenant: one PipelineRun file with parameters, no pipeline engineering.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst &lt; 26-pipeline-service/pipelinerun-source-build.yaml | oc create -f - -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab
+
+oc create -f 26-pipeline-service/pipelinerun-vendor-intake.yaml -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Both runs succeeded in your namespace</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tkn pipelinerun list -n "$NS" --context lab | head -3</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                          STARTED          DURATION   STATUS
+vendor-intake-central-q2w9d   1 minute ago     1m20s      Succeeded
+source-build-h7f3k            4 minutes ago    2m45s      Succeeded</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The runs, their pods and their logs are in <strong>your</strong> namespace. Nothing ran in <code>platform-pipelines</code>.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="cleanup-local"><a class="anchor" href="#cleanup-local"></a>4. Remove your local copies</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Delete the Tasks and Pipelines you copied into your namespace in Steps 2 to 5.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Once the central versions exist, local copies are drift waiting to happen. A tenant namespace should contain runs, not definitions.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete pipeline notes-app-build vendor-intake -n "$NS" --context lab --ignore-not-found
+oc delete task promote-image acs-image-scan image-inspect arbitrary-uid-test intake-gate \
+  -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Only runs remain</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pipelines,tasks -n "$NS" --context lab
+tkn pipelinerun list -n "$NS" --context lab | wc -l</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">No resources found in app-lifecycle-user1 namespace.
+12</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you completed <a href="24-pipelines-as-code.html" class="xref page">Step 4</a>, its <code>.tekton/</code> files reference <code>notes-app-build</code> by name. To keep it working, change their <code>pipelineRef</code> to the cluster resolver block from <code>26-pipeline-service/pipelinerun-source-build.yaml</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_5"><a class="anchor" href="#_what_this_solves_compared_to_step_5"></a>What This Solves (Compared to Step 5)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Step 5</th>
+<th class="tableblock halign-left valign-top">Now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every namespace has its own copy of every Task</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One maintained copy, referenced by all tenants</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new security check means editing every tenant&#8217;s pipeline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One change in <code>platform-pipelines</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tenants need pipeline skills to onboard</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tenants pick a template and set parameters</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Shared definitions are applied by hand</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Session 3: the <code>platform-pipelines</code> namespace managed by Argo CD from Git</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A change to a shared Task affects everyone at once</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Versioning: publish <code>source-build-v2</code> alongside <code>source-build</code>, or reference Tasks from a Git tag with the Git resolver</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/">Red Hat OpenShift Pipelines</a> (see <strong>Specifying remote pipelines, tasks, and step actions using resolvers</strong>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster resolver and a shared namespace (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple, no extra infrastructure, definitions visible with <code>oc</code> and <code>tkn</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Git resolver</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tasks and Pipelines referenced from a Git repository at a tag or commit. Strong versioning; every run is pinned to a reviewed revision.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bundles resolver (OCI images)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pipelines and Tasks packaged as signed images in a registry. Fits organisations that already distribute everything through a central registry.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete pipelinerun -l app.kubernetes.io/part-of=notes-app -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To recreate the local copies for Steps 2 to 5, re-run the <code>oc apply</code> commands of those steps.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a></span>
+  <span class="next"><a href="30-gitops-deploy.html">Session 3: GitOps Deployment</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

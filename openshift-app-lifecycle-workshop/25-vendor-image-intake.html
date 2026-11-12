@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/25-vendor-image-intake.html">
+    <link rel="prev" href="24-pipelines-as-code.html">
+    <link rel="next" href="26-pipeline-service.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop">OpenShift Application Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="openshift-app-lifecycle-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#create-namespace">Create the Workshop Namespace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 1: Onboarding-Ready Applications</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="11-legacy-app.html">Step 1: The Legacy App</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#inspect-containerfile">Inspect the Legacy Containerfile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#build-legacy">Build the Legacy Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#deploy-legacy">Deploy It As-Is</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#diagnose">Diagnose the Failure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="11-legacy-app.html#why-not-anyuid">Why Not Just Grant anyuid?</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="12-image-hygiene.html">Step 2: Image Hygiene</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#compare-containerfiles">Compare the Containerfiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#build-hardened">Build the Hardened Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#deploy-hardened">Deploy Under restricted-v2</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#expose">Expose the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="12-image-hygiene.html#provenance">Image Metadata and Digests</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="13-config-and-secrets.html">Step 3: Configuration and Secrets</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#find-token">Find the Token in the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#configmap">Move Settings to a ConfigMap</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#secret">Move the Token to a Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#rollout-config">Roll Out and Verify</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="13-config-and-secrets.html#change-config">Change a Setting Without Rebuilding</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="14-health-and-resources.html">Step 4: Health and Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#tenant-guardrails">Platform Guardrails</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#probes-resources">Add Probes and Resources</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#break-readiness">Break Readiness on Purpose</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="14-health-and-resources.html#defaults">See the Defaults in Action</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="15-stateless-and-scale.html">Step 5: Stateless and Scalable</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#scale-file">Scale with Local State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#lose-data">Lose Data on Pod Restart</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#database">Move State to a Database</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#verify-shared">Verify Shared State</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="15-stateless-and-scale.html#rolling-update">Zero-Downtime Rolling Update</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="16-admission-checklist.html">Step 6: Platform Admission Checklist</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#checklist">The 10-Point Checklist</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#run-check">Audit a Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#maturity-tiers">Maturity Tiers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#tender-wording">Using It in Tenders</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="16-admission-checklist.html#exercise">Exercise: Score Your Apps</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 2: Build Pipelines</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="20-build-pipelines.html">Overview and Catch-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="21-pipelines-basics.html">Step 1: Pipelines Basics</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#catalogue">The Supported Task Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#hello-task">Your First Task</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#what-ran">What Actually Ran</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="21-pipelines-basics.html#workspace">The Shared Workspace</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="22-source-pipeline.html">Step 2: Source to Image</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#read-pipeline">Read the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#run-pipeline">Run the Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#rollout">Automatic Rollout</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="22-source-pipeline.html#trace">Trace a Pod to Its Source</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="23-scan-gate.html">Step 3: Scan Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#add-gate">Add the Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-pass">UBI Image: Passes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="23-scan-gate.html#run-fail">Legacy Image: Blocked</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Upcoming Sessions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
+    <li>Session 2: Build Pipelines</li>
+    <li><a href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/25-vendor-image-intake.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">OpenShift Application Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Steps 2 to 4 assume you have the source code. For most workloads on a platform that hosts third-party software, you do not: the vendor delivers a finished image, often built for <code>docker run</code> on a VM, running as root, with configuration and sometimes credentials baked in. You cannot fix the Containerfile, and "ask the vendor" can take a year.</p>
+</div>
+<div class="paragraph">
+<p>This step builds an <strong>intake</strong> pipeline for such images and then works through four <strong>remediation levels</strong>, from cheapest to most expensive, using the legacy image from Session 1 as the "vendor" image. The key lesson: <strong>most images that "need root" only need a writable directory and an unprivileged port</strong>, and you can provide both without the vendor&#8217;s source.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="23-scan-gate.html" class="xref page">Step 3</a> completed: <code>acs-image-scan</code>, <code>promote-image</code> and <code>notes-app-build</code> (version 2) exist in your namespace</p>
+</li>
+<li>
+<p><code>notes-legacy:latest</code> exists in your namespace (built by the <a href="20-build-pipelines.html#catch-up" class="xref page">catch-up script</a>)</p>
+</li>
+<li>
+<p><code>$GIT_REPO_URL</code> set</p>
+</li>
+<li>
+<p>Remediation level 3 needs cluster-admin for one command, and OpenShift 4.20 or later. In the live session the instructor runs it.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_the_intake_pipeline"><a class="anchor" href="#_the_intake_pipeline"></a>The intake pipeline</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">                   +--&gt; inspect   (credentials in ENV? root user? port &lt; 1024?)
+ inbox image  -----+--&gt; scan      (critical CVEs, ACS)                          --&gt; gate --&gt; promote to &lt;name&gt;:approved
+ notes-legacy      +--&gt; uid-test  (does it run unchanged under restricted-v2?)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The three checks run in parallel and never fail on their own. Each returns a verdict (<code>PASS</code>, <code>WARN</code> or <code>FAIL</code>). The <code>gate</code> Task combines them: any <code>FAIL</code> rejects the image. The one exception is critical CVEs, which can be accepted with an explicit, recorded risk acceptance. You cannot patch a vendor&#8217;s base image yourself, so sometimes you have to accept the risk for a limited time.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_remediation_levels"><a class="anchor" href="#_the_remediation_levels"></a>The remediation levels</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 30%;">
+<col style="width: 30%;">
+<col style="width: 30%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Level</th>
+<th class="tableblock halign-left valign-top">What you change</th>
+<th class="tableblock halign-left valign-top">Needs</th>
+<th class="tableblock halign-left valign-top">When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only the <strong>Deployment</strong>: a writable volume over the data directory, environment variables for the port and credentials</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nothing from the vendor, no rebuild</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The app writes to a few known paths. Try this first.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Re-layer</strong> the image: one thin layer on top of the unchanged vendor image fixes permissions and defaults</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Containerfile in your repository and the build pipeline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The app writes inside its own install directory, or you want the image itself to pass intake</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Run it as <strong>root inside a user namespace</strong>: UID 0 in the container is an unprivileged UID on the node</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A platform exception: a dedicated SCC granted to a dedicated ServiceAccount</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The app really checks for UID 0, or changes file ownership at startup</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grant <code>anyuid</code> or <code>privileged</code>, keep it on a VM, or reject it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A formal, time-limited exception owned by a named person</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Last resort. See <a href="11-legacy-app.html#why-not-anyuid" class="xref page">Session 1, Step 1</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="inbox"><a class="anchor" href="#inbox"></a>1. Look at the delivered image</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Treat <code>notes-legacy:latest</code> as an image a vendor just delivered into your namespace (the "inbox").</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Intake starts from the image, not from source. In real life you would import it from the vendor&#8217;s registry first.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get istag notes-legacy:latest -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+To bring a real vendor image into the inbox, import it into an ImageStream, for example <code>oc import-image vendor-inbox:1.0 --from=registry.example.com/vendor/app:1.0 --confirm -n "$NS" --context lab</code>. On a platform with a central registry, the inbox is a quarantine repository in that registry.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: The image is there</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                  IMAGE REFERENCE                                                                        UPDATED
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy@sha256:...   20 minutes ago</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="run-intake"><a class="anchor" href="#run-intake"></a>2. Run the intake pipeline on the image as delivered</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Create the three check Tasks, the gate and the <code>vendor-intake</code> Pipeline, then run it on <code>notes-legacy:latest</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the Session 1 checklist, automated. Instead of reading a Containerfile you do not have, the pipeline reads the image&#8217;s configuration and actually runs the image the way the platform would.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 25-vendor-image-intake/inspect-task.yaml \
+         -f 25-vendor-image-intake/uid-test-task.yaml \
+         -f 25-vendor-image-intake/gate-task.yaml \
+         -f 25-vendor-image-intake/pipeline.yaml \
+  -n "$NS" --context lab
+oc create -f 25-vendor-image-intake/pipelinerun-intake.yaml -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The image is rejected, for three reasons</summary>
+<div class="content">
+<div class="paragraph">
+<p>The <code>inspect</code> Task:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[inspect : evaluate] FAIL  credential in image environment: API_TOKEN=***9c21
+[inspect : evaluate] WARN  image runs as root (USER=unset)
+[inspect : evaluate] WARN  privileged port exposed: 80/tcp
+[inspect : evaluate] verdict: FAIL</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>uid-test</code> Task:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[uid-test : run] pod phase: Failed (running for 0s)
+[uid-test : run] assigned: scc=restricted-v2 runAsUser=1000690000
+[uid-test : run] --- last log lines ---
+[uid-test : run] PermissionError: [Errno 13] Permission denied: '/data/notes.txt'
+[uid-test : run] verdict: FAIL</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>gate</code> Task:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[gate : decide] CHECK                      RESULT
+[gate : decide] Image configuration        FAIL
+[gate : decide] Critical CVEs (ACS)        FAIL
+[gate : decide] Runs as arbitrary UID      FAIL
+[gate : decide] INTAKE REJECTED: the image is not promoted.</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These are the same three findings you made by hand in Session 1, now in two minutes and with no source code.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="level-1"><a class="anchor" href="#level-1"></a>3. Level 1: fix the environment, not the image</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Deploy the unchanged vendor image with an <code>emptyDir</code> volume over <code>/data</code>, <code>PORT=8080</code>, and the token taken from a Secret.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The crash said "permission denied on <code>/data`", not "I need root". Give the random UID a writable `/data</code> and an unprivileged port, and the image runs under the default <code>restricted-v2</code> SCC with no exception at all.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context lab
+oc rollout status deploy/notes-vendor -n "$NS" --context lab --timeout=120s</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: The vendor image runs as a random non-root UID</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -l app.kubernetes.io/name=notes-vendor -n "$NS" --context lab \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{" runAsUser="}{.items[0].spec.containers[0].securityContext.runAsUser}{"\n"}'
+oc exec deploy/notes-vendor -n "$NS" --context lab -- \
+  python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8080/api/info').read().decode())"</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restricted-v2 runAsUser=1000690000
+{"api_token":"configured (ends with ...a1b2)","environment":"production","greeting":"Hello from the VM","pod":"notes-vendor-...","storage":"local-file","version":"1.0-legacy"}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The token now ends with the characters of <strong>your</strong> Secret, not the baked-in <code>&#8230;&#8203;9c21</code>.</p>
+</div>
+<div class="paragraph">
+<p>This works, but each team that deploys the image has to know and repeat these fixes, and the image itself still fails intake. Level 2 moves the fixes into the image.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="level-2"><a class="anchor" href="#level-2"></a>4. Level 2: re-layer the vendor image</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~5 minutes (one build, two intake runs)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Build a thin layer on top of the unchanged vendor image with the existing build pipeline, then run intake on the result. Run it once without, and once with, a risk acceptance for the vendor&#8217;s CVEs.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A re-layered image fixes permissions and defaults once, for every deployment, and needs no vendor source. The original vendor layers stay byte-for-byte identical, which matters for vendor support.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat 25-vendor-image-intake/relayer/Containerfile
+envsubst &lt; 25-vendor-image-intake/pipelinerun-relayer.yaml | oc create -f - -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The re-layered image is now <code>notes-legacy-relayered:latest</code>. Run intake on it without accepting CVEs:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ACCEPT_CVES=false envsubst &lt; 25-vendor-image-intake/pipelinerun-intake-relayered.yaml \
+  | oc create -f - -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Only the CVEs remain. You cannot fix them without the vendor, so record a time-limited risk acceptance and run intake again:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ACCEPT_CVES=true envsubst &lt; 25-vendor-image-intake/pipelinerun-intake-relayered.yaml \
+  | oc create -f - -n "$NS" --context lab
+tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Approved, with the exception recorded on the image</summary>
+<div class="content">
+<div class="paragraph">
+<p>The first intake run on the re-layered image:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[gate : decide] CHECK                      RESULT
+[gate : decide] Image configuration        WARN
+[gate : decide] Critical CVEs (ACS)        FAIL
+[gate : decide] Runs as arbitrary UID      PASS
+[gate : decide] INTAKE REJECTED: the image is not promoted.</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>WARN</code> remains because port 80 is still declared in the vendor&#8217;s layers. It is only metadata now: the app listens on 8080. The second run ends with <code>INTAKE APPROVED</code>, then:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get istag notes-vendor:approved -n "$NS" --context lab
+oc get imagestream notes-vendor -n "$NS" --context lab \
+  -o jsonpath='{.metadata.annotations.notes-app\.example\.com/intake-note}{"\n"}'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                    IMAGE REFERENCE                                                                         UPDATED
+notes-vendor:approved   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy-relayered@sha256:...   10 seconds ago
+critical CVEs accepted at intake on 2026-11-18; review at next vendor release</code></pre>
+</div>
+</div>
+</div>
+</details>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Clearing <code>API_TOKEN</code> in the new layer removes it from the container&#8217;s environment, but not from the image history: <code>oc image info</code> on the re-layered image still shows the old value in the layer that set it. A credential that was ever in an image must be treated as leaked and rotated by the vendor.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="level-3"><a class="anchor" href="#level-3"></a>5. Level 3: root inside a user namespace</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes. Needs cluster-admin for the first command block.</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Run the <strong>unchanged</strong> vendor image as UID 0, but inside a pod-level Linux user namespace (<code>hostUsers: false</code>). UID 0 in the container is mapped to an unprivileged, unique UID range on the node.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Some images really do need UID 0: they check for it, or change file ownership at startup. User namespaces give these images root <strong>inside</strong> the container without giving them root <strong>on the node</strong>, which is the risk that makes <code>anyuid</code> dangerous on a shared platform.</p>
+</div>
+<div class="paragraph">
+<p>The platform team creates the SCC once and grants it to one dedicated ServiceAccount (cluster-admin):</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat 25-vendor-image-intake/userns/scc.yaml
+oc apply -f 25-vendor-image-intake/userns/scc.yaml --context lab
+oc apply -f 25-vendor-image-intake/userns/serviceaccount.yaml -n "$NS" --context lab
+oc adm policy add-scc-to-user vendor-root-userns -z vendor-root -n "$NS" --context lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The tenant deploys the image with that ServiceAccount:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 25-vendor-image-intake/userns/deployment.yaml -n "$NS" --context lab
+oc rollout status deploy/notes-vendor-userns -n "$NS" --context lab --timeout=120s</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Root in the container, not root on the node</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec deploy/notes-vendor-userns -n "$NS" --context lab -- id
+oc exec deploy/notes-vendor-userns -n "$NS" --context lab -- cat /proc/self/uid_map
+oc exec deploy/notes-vendor-userns -n "$NS" --context lab -- ls -ld /data</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">uid=0(root) gid=0(root) groups=0(root)
+         0 2147483648      65536
+drwxr-xr-x. 1 root root 24 Nov 18 09:41 /data</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>uid_map</code> reads: UID 0 in the container is UID 2147483648 on the node, for a range of 65536 IDs. The exact host number varies per pod. The process writes to the root-owned <code>/data</code> in the image without an <code>emptyDir</code>, and the node sees an unprivileged user.</p>
+</div>
+<div class="paragraph">
+<p>The exception is still an exception: it is granted to one ServiceAccount in one namespace, and other pods in the namespace keep running under <code>restricted-v2</code>.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="decide"><a class="anchor" href="#decide"></a>6. Decide and record</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Use the intake result and the remediation levels to decide what happens to a vendor image, and record exceptions where the platform team can review them.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Every exception that nobody records becomes permanent. The intake pipeline produces the evidence, and the decision still needs an owner.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Intake result</th>
+<th class="tableblock halign-left valign-top">Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Approved, no exceptions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Onboard. Tier 1 or 2 in the <a href="16-admission-checklist.html#maturity-tiers" class="xref page">maturity tiers</a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fails <code>uid-test</code>, passes with level 1 or 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Onboard with the documented fix. Ask the vendor to adopt it in their next release (tender wording, <a href="16-admission-checklist.html#tender-wording" class="xref page">Session 1, Step 6</a>).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Needs level 3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform exception: dedicated ServiceAccount, owner, expiry date, review at every vendor release.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Credentials baked in</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reject until the vendor rotates the credential and removes it from the image. Re-layering cannot remove it from history.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Critical CVEs, no vendor fix</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Accept for a limited time (recorded on the image), or reject. Not the pipeline&#8217;s decision; it belongs to the security owner.</p></td>
+</tr>
+</tbody>
+</table>
+<details>
+<summary class="title">Verify: Exercise</summary>
+<div class="content">
+<div class="paragraph">
+<p>Pick one vendor image you run today. Without looking at its documentation, predict which of the three checks it fails and which remediation level it needs. If you can, import it into your namespace in the hands-on window and run <code>vendor-intake</code> on it to check your prediction.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What This Solves</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Before</th>
+<th class="tableblock halign-left valign-top">Now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"The vendor image needs root", accepted without proof</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An automated test shows exactly what fails under the default SCC</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fixes applied ad hoc in each Deployment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A ladder from cheapest to most expensive fix, with level 2 producing an image that passes intake</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>anyuid</code> as the only answer for root images</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Root inside a user namespace, mapped to an unprivileged node UID</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Risk acceptance by e-mail, if at all</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recorded on the approved image, with a date</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every tenant has a copy of the intake Tasks</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="26-pipeline-service.html" class="xref page">Step 6: Pipelines as a Service</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Approved images are only in this namespace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Registry design discussion: a central registry with quarantine and approved repositories</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new vendor release has to go through intake again</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Session 6: the monthly patch cycle</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/nodes/index">Nodes</a> (see <strong>Running pods in Linux user namespaces</strong>)</p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/authentication_and_authorization/managing-pod-security-policies">Managing security context constraints</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/images/creating-images#use-uid_create-images">Creating images: support arbitrary user IDs</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Intake pipeline with remediation levels (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Evidence-based, repeatable, and keeps exceptions small and visible.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grant <code>anyuid</code> to every vendor workload</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fast, but each one is root on a shared node. Does not scale, see <a href="11-legacy-app.html#why-not-anyuid" class="xref page">Session 1, Step 1</a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rebuild vendor software from scratch on UBI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cleanest image, but usually breaks vendor support. Only for open source components you can build yourself.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Keep root-requiring vendor apps on VMs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A valid outcome. The intake result makes the decision explicit instead of a default.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f 25-vendor-image-intake/userns/deployment.yaml -f 25-vendor-image-intake/userns/serviceaccount.yaml \
+  -n "$NS" --context lab --ignore-not-found
+oc delete -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context lab --ignore-not-found
+oc delete pipelinerun -l tekton.dev/pipeline=vendor-intake -n "$NS" --context lab --ignore-not-found
+oc delete imagestream notes-vendor notes-legacy-relayered -n "$NS" --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Cluster-admin only, when no namespace uses it any more:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f 25-vendor-image-intake/userns/scc.yaml --context lab --ignore-not-found</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a></span>
+  <span class="next"><a href="26-pipeline-service.html">Step 6: Pipelines as a Service</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
