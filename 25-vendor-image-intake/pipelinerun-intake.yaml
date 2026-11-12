@@ -1,0 +1,16 @@
+# pipelinerun-intake.yaml
+# Purpose: Run the intake pipeline on the vendor image as delivered
+#          (notes-legacy:latest, the legacy image from Session 1).
+#          Expected result: REJECTED. Create with "oc create".
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: vendor-intake-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    name: vendor-intake
+  params:
+    - {name: source-istag, value: "notes-legacy:latest"}
+    - {name: approved-name, value: notes-vendor}

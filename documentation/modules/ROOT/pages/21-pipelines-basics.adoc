@@ -1,0 +1,227 @@
+= Step 1 - Pipelines Basics: Tasks, Runs and the Supported Catalogue
+include::_attributes.adoc[]
+
+Before building anything real, this step shows the four objects you will use for the rest of the session and how they map to things you already know: pods and containers. A pipeline on OpenShift is ordinary workloads in your namespace. It runs under the same quota, the same security rules and the same random UID as your application.
+
+== Prerequisites
+
+* xref:20-build-pipelines.adoc#catch-up[Session 2 setup] completed: `notes-app` runs and `$ROUTE` is set
+* `tkn` CLI installed, or the OpenShift Web Terminal
+
+== How It Works
+
+[cols="1,3,3",options="header"]
+|===
+| Object | What it is | Runs as
+
+| Task
+| A list of steps. Each step is a container image plus a script.
+| Nothing yet. It is only a definition.
+
+| TaskRun
+| One execution of a Task with concrete parameters
+| *One pod*. Each step is one container in that pod.
+
+| Pipeline
+| Tasks in order (or in parallel), passing results and files between them
+| Nothing yet. It is only a definition.
+
+| PipelineRun
+| One execution of a Pipeline
+| One TaskRun, and therefore one pod, per Task
+|===
+
+Steps in the same Task share the pod's filesystem. Tasks in the same Pipeline run in *different pods*, so they share files through a *workspace*, usually a persistent volume.
+
+You rarely write every Task yourself. OpenShift Pipelines ships a catalogue of Red Hat supported Tasks (`git-clone`, `buildah`, `skopeo-copy` and more) in the `openshift-pipelines` namespace. Pipelines reference them with the *cluster resolver*.
+
+== Steps to Apply
+
+[#catalogue]
+=== 1. Look at the supported Task catalogue
+
+*What:* Check that the Tekton APIs are available and list the Tasks that ship with OpenShift Pipelines.
+
+*Why:* Reusing supported Tasks means Red Hat patches the build tooling, not your team. Write your own Task only for what is specific to your platform.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc api-resources --api-group=tekton.dev --context {lab-context}
+tkn task list -n openshift-pipelines --context {lab-context}
+----
+
+.Verify: git-clone and buildah are in the catalogue
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn task list -n openshift-pipelines --context {lab-context} | grep -E '^(git-clone|buildah) '
+----
+
+[.console-output]
+[source,bash]
+----
+git-clone   Clone a repository from a git remote ...
+buildah     Build and push container images with Buildah ...
+----
+
+To see a Task's parameters, results and workspaces:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn task describe buildah -n openshift-pipelines --context {lab-context}
+----
+====
+
+'''
+
+[#hello-task]
+=== 2. Create and run your first Task
+
+*What:* Create a two-step Task in your namespace, then run it once.
+
+*Why:* The smallest possible example shows everything that matters later: parameters, steps, logs and a run object that stays behind as a record.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat 21-pipelines-basics/hello-task.yaml
+oc apply -f 21-pipelines-basics/hello-task.yaml -n "$NS" --context {lab-context}
+oc create -f 21-pipelines-basics/hello-taskrun.yaml -n "$NS" --context {lab-context}
+tkn taskrun logs --last -f -n "$NS" --context {lab-context}
+----
+
+NOTE: Run objects use `generateName`, so every run gets a unique name. That is why they are created with `oc create`, not `oc apply`.
+
+.Verify: Both steps ran
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+[who-am-i] Hello, notes-app team
+[who-am-i] pod:  hello-platform-x7k2p-pod
+[who-am-i] user: uid=1000690000(1000690000) gid=0(root) groups=0(root),1000690000
+
+[read-scratch] pod:  hello-platform-x7k2p-pod
+[read-scratch] file from the previous step: step 1 was here
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn taskrun list -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                   STARTED          DURATION   STATUS
+hello-platform-x7k2p   30 seconds ago   9s         Succeeded
+----
+====
+
+'''
+
+[#what-ran]
+=== 3. See what actually ran
+
+*What:* Find the pod behind the TaskRun and list its containers.
+
+*Why:* When a pipeline fails, you debug a pod. Everything from Session 1 still applies: random UID in group 0, `restricted`-style SCC, quota and LimitRange defaults.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+TR=$(oc get taskrun -n "$NS" --context {lab-context} --sort-by=.metadata.creationTimestamp \
+  -o jsonpath='{.items[-1:].metadata.name}')
+oc get pod -l tekton.dev/taskRun="$TR" -n "$NS" --context {lab-context} \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}{range .items[0].spec.containers[*]}{.name}{"\n"}{end}'
+----
+
+.Verify: One pod, one container per step
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+restricted-v2
+step-who-am-i
+step-read-scratch
+----
+
+The two steps were two containers in one pod, which is why the second step could read the file the first one wrote. You may see `pipelines-scc` instead of `restricted-v2`: it is `restricted-v2` plus the one capability Buildah needs to build images without root, and the pipeline service account is allowed to use it. Either way, the pod never runs as root.
+====
+
+'''
+
+[#workspace]
+=== 4. Create the shared workspace volume
+
+*What:* Create one persistent volume claim that the pipelines in the next steps use for the cloned source.
+
+*Why:* The clone Task and the build Task run in different pods, so the source code has to live on a volume both can mount. Reusing one claim keeps you well inside the namespace PVC quota.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 21-pipelines-basics/workspace-pvc.yaml -n "$NS" --context {lab-context}
+----
+
+.Verify: The claim exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pvc pipeline-ws -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+pipeline-ws   Pending                                      gp3-csi        5s
+----
+
+`Pending` is normal on storage classes with `WaitForFirstConsumer`: the volume is created when the first pipeline pod uses it.
+====
+
+'''
+
+== What This Solves
+
+You know how pipeline objects map to pods and containers, where the supported Tasks are, and how files move between Tasks.
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Images are still built by hand with `oc start-build`
+| xref:22-source-pipeline.adoc[Step 2: Source to Image]
+
+| Nothing stops a vulnerable image from being deployed
+| xref:23-scan-gate.adoc[Step 3: Scan Gate]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines]
+
+'''
+
+== Reset
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete taskrun -l app.kubernetes.io/part-of=notes-app -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 21-pipelines-basics/hello-task.yaml -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+TIP: Keep the `pipeline-ws` claim. Steps 2 to 6 use it.

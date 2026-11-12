@@ -8,10 +8,13 @@ This page prepares your environment: log in to the workshop cluster, export the 
 
 * One OpenShift {ocp-version} cluster (provisioned from the Red Hat Demo Platform for this workshop)
 * `oc` CLI ({ocp-version}) installed, or the OpenShift *Web Terminal* (see the tip below)
-* `git`, `curl` and `jq` available
-* Cluster-admin access to the cluster (some steps create platform-side objects such as quotas)
+* `git`, `curl`, `jq` and `envsubst` available
+* `tkn` CLI (from Session 2), the Tekton client for OpenShift Pipelines
+* Session 1: cluster-admin access (some steps create platform-side objects such as quotas)
+* From Session 2: a normal user with admin rights on your own namespace is enough. On a shared cluster, the instructor prepares the platform-side objects for everyone.
+* Session 2, Step 4 (optional): a GitHub account
 
-TIP: If you cannot install tools on your workstation, open the *Web Terminal* from the `>_` icon in the top-right corner of the OpenShift web console. It already has `oc`, `git`, `curl` and `jq`, and it is logged in as your user. You can skip the login part of this page and go straight to <<clone-repo>>, then run `oc config rename-context "$(oc config current-context)" {lab-context}` once.
+TIP: If you cannot install tools on your workstation, open the *Web Terminal* from the `>_` icon in the top-right corner of the OpenShift web console. It already has `oc`, `tkn`, `git`, `curl` and `jq`, and it is logged in as your user. You can skip the login part of this page and go straight to <<clone-repo>>, then run `oc config rename-context "$(oc config current-context)" {lab-context}` once.
 
 [#cluster-mapping]
 == Cluster mapping
@@ -82,8 +85,12 @@ Create `myenv.sh` at the root of the repository (or in your home directory if yo
 
 # ── Workshop variables ───────────────────────────────────────────────────
 export LAB_API_URL="https://api.<cluster-domain>:6443"
-export NS="app-lifecycle"     # change it if several people share one cluster
+export NS="app-lifecycle"     # on a shared cluster: the namespace you were given, e.g. app-lifecycle-user1
 export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
+
+# ── Session 2, Step 4 (optional) ─────────────────────────────────────────
+export GITHUB_FORK_URL="https://github.com/<your-github-user>/openshift-app-lifecycle-workshop"
+export PAC_WEBHOOK_URL="<provided by the instructor>"
 
 # ── Context cleanup (idempotent) ─────────────────────────────────────────
 oc config delete-context lab 2>/dev/null
@@ -110,8 +117,16 @@ oc config rename-context "$(oc config current-context)" lab
 | Clone URL of this workshop repository
 
 | `ROUTE`
-| Steps 2 to 5
-| Hostname of the application route. Set in xref:12-image-hygiene.adoc#expose[Step 2].
+| Session 1 Steps 2 to 5, Session 2
+| Hostname of the application route. Set in xref:12-image-hygiene.adoc#expose[Step 2], or by the xref:20-build-pipelines.adoc#catch-up[Session 2 catch-up].
+
+| `GITHUB_FORK_URL`
+| xref:24-pipelines-as-code.adoc[Session 2, Step 4]
+| Your fork of the workshop repository on GitHub, without `.git`
+
+| `PAC_WEBHOOK_URL`
+| xref:24-pipelines-as-code.adoc[Session 2, Step 4]
+| Webhook URL of the Pipelines as Code controller. The instructor provides it (route `pipelines-as-code-controller` in `openshift-pipelines`).
 |===
 
 NOTE: `--insecure-skip-tls-verify` is only acceptable on throwaway demo clusters with self-signed certificates.
@@ -131,6 +146,8 @@ grep -E '^export' myenv.sh
 export LAB_API_URL="https://api.cluster-xxxxx.example.com:6443"
 export NS="app-lifecycle"
 export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
+export GITHUB_FORK_URL="https://github.com/<your-github-user>/openshift-app-lifecycle-workshop"
+export PAC_WEBHOOK_URL="https://pipelines-as-code-controller-openshift-pipelines.apps.cluster-xxxxx.example.com"
 ----
 ====
 
@@ -231,6 +248,8 @@ ls -d app 1*-*/
 ----
 oc create namespace "$NS" --context {lab-context}
 ----
+
+NOTE: On a shared cluster where you are not cluster-admin, your namespace may already exist (check with `oc get project "$NS" --context {lab-context}`). If it does not, create it with `oc new-project "$NS" --skip-config-write --context {lab-context}`.
 
 .Verify: The namespace exists and has a UID range assigned
 [%collapsible]

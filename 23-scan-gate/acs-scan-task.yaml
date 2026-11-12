@@ -1,0 +1,65 @@
+# acs-scan-task.yaml
+# Purpose: Scan an image with Red Hat Advanced Cluster Security (ACS) and report
+#          critical vulnerabilities. Downloads roxctl from Central, so the CLI
+#          always matches the Central version. Reads the endpoint and an API
+#          token (Continuous Integration role) from the acs-api Secret, which the
+#          platform team creates in every tenant namespace.
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: acs-image-scan
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: image
+      type: string
+      description: Full image reference, preferably by digest
+    - name: fail-on-critical
+      type: string
+      description: '"true" fails the task when critical CVEs are found'
+      default: "true"
+  results:
+    - name: verdict
+      description: PASS (no critical CVEs) or FAIL (critical CVEs found)
+  steps:
+    - name: scan
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      envFrom:
+        - secretRef:
+            name: acs-api
+      env:
+        - name: IMAGE
+          value: $(params.image)
+        - name: FAIL_ON_CRITICAL
+          value: $(params.fail-on-critical)
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+        curl -sfk -H "Authorization: Bearer $ROX_API_TOKEN" \
+          "https://$ROX_ENDPOINT/api/cli/download/roxctl-linux" -o /tmp/roxctl \
+          || { echo "ERROR: cannot download roxctl from $ROX_ENDPOINT"; exit 1; }
+        chmod +x /tmp/roxctl
+
+        echo "Scanning $IMAGE for CRITICAL vulnerabilities..."
+        out=$(/tmp/roxctl image scan --image "$IMAGE" -e "$ROX_ENDPOINT" \
+                --insecure-skip-tls-verify --force \
+                --severity CRITICAL --output table --fail 2>&1)
+        rc=$?
+        echo "$out"
+
+        if [[ $rc -eq 0 ]]; then
+          verdict=PASS
+        elif grep -q 'CVE-' <<<"$out"; then
+          verdict=FAIL
+        else
+          echo "ERROR: the scan itself failed (exit code $rc), see the output above"
+          exit 1
+        fi
+        printf '%s' "$verdict" > "$(results.verdict.path)"
+        echo "verdict: $verdict"
+
+        if [[ "$verdict" == FAIL && "$FAIL_ON_CRITICAL" == "true" ]]; then
+          echo "Critical vulnerabilities found: the image is NOT promoted."
+          exit 1
+        fi

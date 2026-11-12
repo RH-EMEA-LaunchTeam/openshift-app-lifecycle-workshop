@@ -1,9 +1,14 @@
-= Session 2 - Build Pipelines: From Source to a Scanned Image
+= Session 2 - Build Pipelines: From Source and Vendor Images to an Approved Image
 include::_attributes.adoc[]
 
-IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
+In Session 1 you built images by hand with `oc start-build` and judged them against the admission checklist by reading YAML. This session turns both into pipelines that run the same way every time, for every team:
 
-Replace the manual `oc start-build` from Session 1 with a repeatable OpenShift Pipelines (Tekton) pipeline, and define how third-party images enter the platform.
+* *Applications you build from source* go through a pipeline: clone, build, scan, and promote only if the scan passes.
+* *Images you cannot rebuild*, usually delivered by a vendor, go through an *intake* pipeline: inspect, scan, test under the platform's default security, then approve, fix or reject.
+
+On most platforms that host vendor software, the second pipeline matters more. This session gives it the most time.
+
+The pipelines run on *OpenShift Pipelines*, Red Hat's supported distribution of the Tekton project, and scan with *Red Hat Advanced Cluster Security (ACS)*. If your teams already use another CI system, the same stages and gates apply. Only the tool changes.
 
 == Where it fits
 
@@ -12,29 +17,154 @@ Replace the manual `oc start-build` from Session 1 with a repeatable OpenShift P
 | Lifecycle stage | Builds on
 
 | Build
-| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1] and the xref:16-admission-checklist.adoc[admission checklist]
+| The hardened `notes-app` from xref:15-stateless-and-scale.adoc[Session 1, Step 5], the legacy image from xref:11-legacy-app.adoc[Step 1] and the xref:16-admission-checklist.adoc[admission checklist]
 |===
 
-== Planned steps
+== Steps
 
-. Install OpenShift Pipelines and explore Tasks, Pipelines and PipelineRuns
-. Build `notes-app` from Git: clone, build with Buildah, push to the registry
-. Add an image scan step and fail the pipeline on critical vulnerabilities
-. Trigger the pipeline on a Git push with a webhook
-. Import a vendor-delivered image: pull, scan, retag and promote into the approved registry
-. Offer the pipeline as a reusable template for tenants (pipeline as a service)
+[cols="1,3,4",options="header"]
+|===
+| Step | Page | What you get
 
-== What the session leaves behind
+| 1
+| xref:21-pipelines-basics.adoc[Pipelines Basics]
+| Tasks, TaskRuns, Pipelines and the Red Hat supported Task catalogue
 
-* A reference pipeline tenants can reuse
-* A documented path for third-party images into the approved registry
+| 2
+| xref:22-source-pipeline.adoc[Source to Image]
+| A pipeline that builds `notes-app` from Git, tags it with the commit and rolls it out
+
+| 3
+| xref:23-scan-gate.adoc[Scan Gate]
+| Images with critical vulnerabilities never reach the running Deployment
+
+| 4
+| xref:24-pipelines-as-code.adoc[Pipelines as Code] (optional)
+| Pull requests build and scan, merges promote, with results reported in GitHub
+
+| 5
+| xref:25-vendor-image-intake.adoc[Vendor Image Intake]
+| An intake pipeline and four remediation levels for images that run as root
+
+| 6
+| xref:26-pipeline-service.adoc[Pipelines as a Service] (optional)
+| The platform team publishes the pipelines once and every tenant reuses them
+|===
+
+== Before you start
+
+This session runs on a fresh cluster that several participants share. Each participant has their own user and their own namespace, with admin rights on that namespace only, like a real tenant. The instructor has already done the platform-side setup.
+
+[cols="2,4",options="header"]
+|===
+| Prepared by the platform team (instructor) | Why it is not part of your steps
+
+| OpenShift Pipelines operator
+| Cluster-wide component, installed once by the platform team
+
+| ACS Central and SecuredCluster, plus an `acs-api` Secret in your namespace
+| The security team owns the scanner and hands each tenant a token for its CI
+
+| LimitRange and ResourceQuota on your namespace
+| Platform guardrails from xref:14-health-and-resources.adoc#tenant-guardrails[Session 1, Step 4]
+
+| `platform-pipelines` namespace with shared Tasks and Pipelines
+| Used in xref:26-pipeline-service.adoc[Step 6]
+|===
+
+NOTE: To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cluster-admin. Its header explains the arguments.
+
+=== 1. Complete the setup page
+
+*What:* Follow xref:00-setup.adoc[Cluster Setup] with your own user and namespace, including the Session 2 variables.
+
+*Why:* Every command in this session uses `$NS`, `$GIT_REPO_URL` and the `{lab-context}` context. Step 4 also needs `$GITHUB_FORK_URL` and `$PAC_WEBHOOK_URL`.
+
+.Verify: Context, namespace and tools
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context {lab-context}
+oc get project "$NS" --context {lab-context} -o name
+tkn version --component client
+----
+
+[.console-output]
+[source,bash]
+----
+user1
+project.project.openshift.io/app-lifecycle-user1
+Client version: 0.4x.x
+----
+
+If `tkn` is missing, use the OpenShift *Web Terminal*, which includes it.
+====
+
+'''
+
+[#catch-up]
+=== 2. Catch up to the end of Session 1
+
+icon:clock[] ~3 minutes
+
+*What:* Run the catch-up script. It builds both images and deploys `notes-app` in the state it had at the end of xref:15-stateless-and-scale.adoc[Session 1, Step 5].
+
+*Why:* This is a new cluster, so nothing from Session 1 exists yet. The script needs only admin rights on your namespace.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+./20-session-prep/catch-up.sh "$NS" {lab-context}
+----
+
+Then export the route and save it in `myenv.sh`:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export ROUTE=$(oc get route notes-app -n "$NS" --context {lab-context} -o jsonpath='{.spec.host}')
+echo "export ROUTE=$ROUTE" >> myenv.sh
+----
+
+NOTE: The legacy image pulls its base from Docker Hub. If the script stops with `toomanyrequests`, wait a few minutes and run it again. It is safe to re-run.
+
+.Verify: notes-app answers with version 1.0
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk "https://$ROUTE/api/info" | jq '{version, storage}'
+oc get istag -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "version": "1.0",
+  "storage": "postgresql"
+}
+NAME                  IMAGE REFERENCE                                   UPDATED
+notes-app:latest      image-registry.openshift-image-registry.svc:5000/...   1 minute ago
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/...   1 minute ago
+----
+
+Version `1.0` comes from the hand-started build. After Step 2 the version is a Git commit.
+====
+
+'''
 
 == Questions to prepare
 
 * Which registry will be the long-term source of truth for images, and how does it relate to the cluster's internal registry?
-* Do vendors deliver source, Containerfiles, images or image archives?
-* Who owns the pipeline definitions: the platform team or the tenants?
+* Do vendors deliver source, Containerfiles, images or image archives? For how many of your applications each?
+* Who owns the pipeline definitions: the platform team, the tenants, or both (central templates, tenant-specific parameters)?
+* Who may accept a vulnerability risk for a vendor image, and for how long?
 
 == Official Documentation
 
-* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[OpenShift Pipelines]
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/[Red Hat Advanced Cluster Security for Kubernetes]

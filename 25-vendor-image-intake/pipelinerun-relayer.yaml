@@ -1,0 +1,28 @@
+# pipelinerun-relayer.yaml
+# Purpose: Build the re-layered vendor image with the same notes-app-build
+#          pipeline from Steps 2-3, pointing it at relayer/Containerfile.
+#          The scan reports but does not stop this run: the vendor's CVEs are
+#          judged by the intake gate. ${GIT_REPO_URL} and ${NS} are filled in
+#          with envsubst. Create with "oc create".
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: notes-relayer-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    name: notes-app-build
+  params:
+    - {name: git-url, value: "${GIT_REPO_URL}"}
+    - {name: context, value: 25-vendor-image-intake/relayer}
+    - {name: containerfile, value: 25-vendor-image-intake/relayer/Containerfile}
+    - {name: image-name, value: notes-legacy-relayered}
+    - name: build-args
+      value:
+        - VENDOR_IMAGE=image-registry.openshift-image-registry.svc:5000/${NS}/notes-legacy:latest
+    - {name: fail-on-critical, value: "false"}
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pipeline-ws

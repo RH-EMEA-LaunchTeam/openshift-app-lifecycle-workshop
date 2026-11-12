@@ -1,0 +1,52 @@
+# promote-task.yaml
+# Purpose: Promote an image inside the namespace by pointing one ImageStreamTag
+#          at another (for example notes-app:<commit> -> notes-app:latest).
+#          Optionally records a note on the target ImageStream, used for intake
+#          exceptions in Step 5. Uses the oc client image shipped with the cluster.
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: promote-image
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: source
+      type: string
+      description: Source ImageStreamTag, for example notes-app:3f2c1ab
+    - name: target
+      type: string
+      description: Target ImageStreamTag, for example notes-app:latest
+    - name: note
+      type: string
+      description: Note stored as an annotation on the target ImageStream ("none" to skip)
+      default: none
+  results:
+    - name: digest
+      description: Digest the target tag now points to
+  steps:
+    - name: tag
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      env:
+        - name: SOURCE
+          value: $(params.source)
+        - name: TARGET
+          value: $(params.target)
+        - name: NOTE
+          value: $(params.note)
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        oc tag "$SOURCE" "$TARGET"
+        if [[ -n "$NOTE" && "$NOTE" != none ]]; then
+          oc annotate imagestream "${TARGET%%:*}" --overwrite \
+            "notes-app.example.com/intake-note=$NOTE"
+        fi
+        # The tag update is asynchronous; wait until the target resolves.
+        for _ in $(seq 1 15); do
+          digest=$(oc get istag "$TARGET" -o jsonpath='{.image.metadata.name}' 2>/dev/null || true)
+          [[ -n "$digest" ]] && break
+          sleep 2
+        done
+        echo "promoted $SOURCE -> $TARGET ($digest)"
+        printf '%s' "$digest" > "$(results.digest.path)"

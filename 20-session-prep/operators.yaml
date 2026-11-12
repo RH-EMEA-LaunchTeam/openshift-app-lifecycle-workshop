@@ -1,0 +1,46 @@
+# operators.yaml
+# Purpose: Platform-side prerequisites for Session 2, applied once per cluster by
+#          the instructor (cluster-admin): the OpenShift Pipelines operator and the
+#          Red Hat Advanced Cluster Security (ACS) operator.
+#          Participants never apply this file.
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-pipelines-operator-rh
+  namespace: openshift-operators
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  channel: latest
+  name: openshift-pipelines-operator-rh
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhacs-operator
+  labels:
+    app.kubernetes.io/part-of: notes-app
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: rhacs-operator
+  namespace: rhacs-operator
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec: {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhacs-operator
+  namespace: rhacs-operator
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  channel: stable
+  name: rhacs-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace

@@ -1,0 +1,21 @@
+# repository.yaml
+# Purpose: Connect your GitHub fork to this namespace with Pipelines as Code.
+#          Events from the fork (push, pull request) run the PipelineRuns
+#          stored in the fork's .tekton/ directory, in this namespace.
+#          ${GITHUB_FORK_URL} is filled in with envsubst. The github-pac Secret
+#          (token and webhook secret) is created with "oc create secret".
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: notes-app
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  url: ${GITHUB_FORK_URL}
+  git_provider:
+    secret:
+      name: github-pac
+      key: provider.token
+    webhook_secret:
+      name: github-pac
+      key: webhook.secret

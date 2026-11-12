@@ -1,0 +1,258 @@
+= Step 6 - Pipelines as a Service: Publish Once, Reuse Everywhere
+include::_attributes.adoc[]
+
+TIP: This step is optional in the hands-on window. It takes about 15 minutes.
+
+In Steps 2 to 5 every Task and Pipeline was copied into your namespace. With a hundred applications, that means a hundred copies of the scan Task, each slowly drifting from the others. This step uses the pipelines that the platform team has published *once*, in a shared `platform-pipelines` namespace. Tenants reference them by name with the cluster resolver and keep only their PipelineRuns.
+
+This also answers "we have a hundred vendors with different needs": tenants do not write pipelines. They choose one of a small number of maintained templates (build from source, intake a vendor image) and set parameters.
+
+== Prerequisites
+
+* xref:25-vendor-image-intake.adoc[Step 5] completed: `notes-legacy-relayered:latest` exists
+* The `platform-pipelines` namespace was prepared by the platform team (`20-session-prep/platform-setup.sh`)
+
+== How It Works
+
+[source,text]
+----
+ platform-pipelines (platform team owns)        your namespace (tenant owns)
+ ---------------------------------------        ----------------------------
+ Pipeline source-build                    <---  PipelineRun  (pipelineRef: resolver cluster)
+ Pipeline vendor-intake                   <---  PipelineRun
+ Tasks: acs-image-scan, image-inspect,          pipeline-ws PVC, acs-api Secret, ImageStreams
+        arbitrary-uid-test, intake-gate,
+        promote-image
+----
+
+The cluster resolver fetches the Pipeline and its Tasks at run time. *The pods still run in your namespace*, with your quota, your service account and your images. The platform team owns the definitions; the tenant owns the runs and their results.
+
+[cols="2,3",options="header"]
+|===
+| Who changes it | How
+
+| Platform team: a new scan rule or a new intake check
+| Changes the Task in `platform-pipelines` once. Every tenant's next run uses it.
+
+| Tenant: a different Containerfile, image name or Git repository
+| Changes parameters in its own PipelineRun. No change to shared definitions.
+|===
+
+== Steps to Apply
+
+[#catalogue]
+=== 1. Browse the shared catalogue
+
+*What:* List the Pipelines and Tasks in `platform-pipelines`.
+
+*Why:* The catalogue is the platform's offer to tenants, like the service catalogue for infrastructure. You can read it, but not change it.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipeline list -n platform-pipelines --context {lab-context}
+tkn task list -n platform-pipelines --context {lab-context}
+----
+
+.Verify: Two pipelines, five tasks, read-only
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME            AGE
+source-build    1 day ago
+vendor-intake   1 day ago
+NAME                 DESCRIPTION   AGE
+acs-image-scan                     1 day ago
+arbitrary-uid-test                 1 day ago
+image-inspect                      1 day ago
+intake-gate                        1 day ago
+promote-image                      1 day ago
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc auth can-i update pipelines -n platform-pipelines --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+no
+----
+====
+
+'''
+
+[#compare]
+=== 2. Compare a central pipeline with your copy
+
+*What:* Compare the published `source-build` with your `notes-app-build` from Step 3.
+
+*Why:* They are the same pipeline. Only the `taskRef` blocks differ: they point to the central namespace instead of your own.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+diff 23-scan-gate/pipeline.yaml 26-pipeline-service/source-build-pipeline.yaml
+----
+
+.Verify: Only references changed
+[%collapsible]
+====
+Apart from the header comment and the name, the differences are `taskRef` blocks like this one:
+
+[.console-output]
+[source,yaml]
+----
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: acs-image-scan}
+          - {name: namespace, value: platform-pipelines}
+----
+====
+
+'''
+
+[#run-central]
+=== 3. Run the central pipelines from your namespace
+
+icon:clock[] ~5 minutes
+
+*What:* Run `source-build` for `notes-app`, and `vendor-intake` for the re-layered vendor image. Both are referenced from `platform-pipelines`.
+
+*Why:* This is what onboarding a new application looks like for a tenant: one PipelineRun file with parameters, no pipeline engineering.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst < 26-pipeline-service/pipelinerun-source-build.yaml | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+
+oc create -f 26-pipeline-service/pipelinerun-vendor-intake.yaml -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+.Verify: Both runs succeeded in your namespace
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun list -n "$NS" --context {lab-context} | head -3
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                          STARTED          DURATION   STATUS
+vendor-intake-central-q2w9d   1 minute ago     1m20s      Succeeded
+source-build-h7f3k            4 minutes ago    2m45s      Succeeded
+----
+
+The runs, their pods and their logs are in *your* namespace. Nothing ran in `platform-pipelines`.
+====
+
+'''
+
+[#cleanup-local]
+=== 4. Remove your local copies
+
+*What:* Delete the Tasks and Pipelines you copied into your namespace in Steps 2 to 5.
+
+*Why:* Once the central versions exist, local copies are drift waiting to happen. A tenant namespace should contain runs, not definitions.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete pipeline notes-app-build vendor-intake -n "$NS" --context {lab-context} --ignore-not-found
+oc delete task promote-image acs-image-scan image-inspect arbitrary-uid-test intake-gate \
+  -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+.Verify: Only runs remain
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pipelines,tasks -n "$NS" --context {lab-context}
+tkn pipelinerun list -n "$NS" --context {lab-context} | wc -l
+----
+
+[.console-output]
+[source,bash]
+----
+No resources found in app-lifecycle-user1 namespace.
+12
+----
+
+NOTE: If you completed xref:24-pipelines-as-code.adoc[Step 4], its `.tekton/` files reference `notes-app-build` by name. To keep it working, change their `pipelineRef` to the cluster resolver block from `26-pipeline-service/pipelinerun-source-build.yaml`.
+====
+
+'''
+
+== What This Solves (Compared to Step 5)
+
+[cols="2,3",options="header"]
+|===
+| Step 5 | Now
+
+| Every namespace has its own copy of every Task
+| One maintained copy, referenced by all tenants
+
+| A new security check means editing every tenant's pipeline
+| One change in `platform-pipelines`
+
+| Tenants need pipeline skills to onboard
+| Tenants pick a template and set parameters
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Shared definitions are applied by hand
+| Session 3: the `platform-pipelines` namespace managed by Argo CD from Git
+
+| A change to a shared Task affects everyone at once
+| Versioning: publish `source-build-v2` alongside `source-build`, or reference Tasks from a Git tag with the Git resolver
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines] (see *Specifying remote pipelines, tasks, and step actions using resolvers*)
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Cluster resolver and a shared namespace (this step)
+| Simple, no extra infrastructure, definitions visible with `oc` and `tkn`.
+
+| Git resolver
+| Tasks and Pipelines referenced from a Git repository at a tag or commit. Strong versioning; every run is pinned to a reviewed revision.
+
+| Bundles resolver (OCI images)
+| Pipelines and Tasks packaged as signed images in a registry. Fits organisations that already distribute everything through a central registry.
+|===
+
+'''
+
+== Reset
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete pipelinerun -l app.kubernetes.io/part-of=notes-app -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+To recreate the local copies for Steps 2 to 5, re-run the `oc apply` commands of those steps.

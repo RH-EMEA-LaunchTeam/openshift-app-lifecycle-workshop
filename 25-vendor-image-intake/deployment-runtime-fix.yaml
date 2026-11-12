@@ -1,0 +1,61 @@
+# deployment-runtime-fix.yaml
+# Purpose: Remediation level 1 - no rebuild. Run the vendor image unchanged
+#          under restricted-v2 by fixing its environment instead of its
+#          content: a writable emptyDir over the root-owned data directory, an
+#          unprivileged port, and the baked-in token overridden from a Secret.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-vendor
+  labels:
+    app.kubernetes.io/name: notes-vendor
+    app.kubernetes.io/part-of: notes-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-vendor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notes-vendor
+        app.kubernetes.io/part-of: notes-app
+    spec:
+      containers:
+        - name: notes-vendor
+          image: notes-legacy:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT          # the image defaults to 80
+              value: "8080"
+            - name: DATA_DIR
+              value: /data
+            - name: API_TOKEN     # replaces the token baked into the image
+              valueFrom:
+                secretKeyRef:
+                  name: notes-app-token
+                  key: API_TOKEN
+          volumeMounts:
+            - name: data          # emptyDir is writable by the random UID
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 10
+      volumes:
+        - name: data
+          emptyDir: {}

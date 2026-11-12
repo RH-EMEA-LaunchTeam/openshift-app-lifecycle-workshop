@@ -1,0 +1,72 @@
+# inspect-task.yaml
+# Purpose: Read an image's configuration without running it and flag the
+#          patterns from the Session 1 checklist: credentials in environment
+#          variables (FAIL), root user (WARN) and privileged ports (WARN).
+#          Step 1 fetches the config with "oc image info"; step 2 evaluates it.
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: image-inspect
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: image
+      type: string
+      description: Full image reference
+  results:
+    - name: verdict
+      description: PASS, WARN or FAIL
+  volumes:
+    - name: scratch
+      emptyDir: {}
+  stepTemplate:
+    volumeMounts:
+      - name: scratch
+        mountPath: /scratch
+  steps:
+    - name: fetch-config
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      env:
+        - name: IMAGE
+          value: $(params.image)
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # Authenticate to the internal registry with this pod's service account token
+        registry=image-registry.openshift-image-registry.svc:5000
+        token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+        auth=$(printf 'serviceaccount:%s' "$token" | base64 -w0)
+        printf '{"auths":{"%s":{"auth":"%s"}}}' "$registry" "$auth" > /scratch/auth.json
+        oc image info "$IMAGE" --registry-config=/scratch/auth.json --insecure -o json > /scratch/info.json
+        echo "fetched image configuration for $IMAGE"
+    - name: evaluate
+      image: registry.access.redhat.com/ubi9/python-312:latest
+      script: |
+        #!/usr/bin/env python3
+        import json, re
+
+        info = json.load(open("/scratch/info.json"))
+        cfg = info.get("config", {}).get("config", {})
+        findings = []
+
+        secret = re.compile(r"(TOKEN|PASSWORD|PASSWD|SECRET|API_KEY|PRIVATE_KEY)", re.I)
+        for env in cfg.get("Env") or []:
+            name, _, value = env.partition("=")
+            if secret.search(name) and value:
+                findings.append(("FAIL", f"credential in image environment: {name}=***{value[-4:]}"))
+
+        user = (cfg.get("User") or "").split(":")[0]
+        if user in ("", "0", "root"):
+            findings.append(("WARN", f"image runs as root (USER={user or 'unset'})"))
+
+        for port in cfg.get("ExposedPorts") or {}:
+            if int(port.split("/")[0]) < 1024:
+                findings.append(("WARN", f"privileged port exposed: {port}"))
+
+        for level, text in findings:
+            print(f"{level:5} {text}")
+        levels = {level for level, _ in findings}
+        verdict = "FAIL" if "FAIL" in levels else "WARN" if "WARN" in levels else "PASS"
+        print(f"verdict: {verdict}")
+        open("$(results.verdict.path)", "w").write(verdict)

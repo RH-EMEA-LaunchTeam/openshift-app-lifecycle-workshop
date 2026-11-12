@@ -1,0 +1,17 @@
+# pipelinerun-intake-relayered.yaml
+# Purpose: Run the intake pipeline on the re-layered image. ACCEPT_CVES is
+#          filled in with envsubst: "false" shows the CVE rejection, "true"
+#          records a risk acceptance and promotes the image. Create with "oc create".
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: vendor-intake-relayered-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    name: vendor-intake
+  params:
+    - {name: source-istag, value: "notes-legacy-relayered:latest"}
+    - {name: approved-name, value: notes-vendor}
+    - {name: accept-critical-cves, value: "${ACCEPT_CVES}"}

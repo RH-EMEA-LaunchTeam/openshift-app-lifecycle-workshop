@@ -1,0 +1,16 @@
+# workspace-pvc.yaml
+# Purpose: One persistent volume that the pipelines in this session reuse for the
+#          cloned source code. Reusing it avoids a new PVC per run, which would
+#          quickly hit the namespace PVC quota.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pipeline-ws
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

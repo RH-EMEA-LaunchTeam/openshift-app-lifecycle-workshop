@@ -1,0 +1,270 @@
+= Step 2 - Source to Image: A Repeatable Build Pipeline
+include::_attributes.adoc[]
+
+In Session 1 the image was built from whatever was in your local `app/` directory, and the version was whatever someone typed into the BuildConfig. This step replaces that with a pipeline: it clones a specific Git revision, builds with Buildah, tags the image with the *Git commit*, and promotes that exact image to `notes-app:latest`. The Deployment from Session 1 already watches `notes-app:latest`, so a successful pipeline run is also a rollout.
+
+== Prerequisites
+
+* xref:21-pipelines-basics.adoc[Step 1] completed: the `pipeline-ws` claim exists
+* `$GIT_REPO_URL` and `$ROUTE` set
+
+== How It Works
+
+[source,text]
+----
+ clone (git-clone)  -->  build (buildah)  -->  promote (promote-image)
+ commit 3f2c1ab          notes-app:3f2c1ab      notes-app:latest -> 3f2c1ab
+                                                       |
+                                     Deployment trigger: rolling update
+----
+
+[cols="1,2,3",options="header"]
+|===
+| Task | Source | What it does
+
+| `clone`
+| Red Hat catalogue (`git-clone`)
+| Clones the repository at `git-revision` and returns the exact `COMMIT` as a result
+
+| `build`
+| Red Hat catalogue (`buildah`)
+| Builds `app/Containerfile` without root, passes the commit as `APP_VERSION`, adds `vcs-ref` and `vcs-url` labels, and pushes `notes-app:<commit>`
+
+| `promote`
+| This repository (`promote-image`)
+| Points `notes-app:latest` at `notes-app:<commit>`. Skipped when `promote` is not `"true"`.
+|===
+
+Building and promoting are deliberately separate. Every build is kept under its commit tag, and *promotion* is a separate decision. Step 3 puts a scan gate between the two.
+
+== Steps to Apply
+
+[#read-pipeline]
+=== 1. Read the pipeline
+
+*What:* Read the Pipeline definition and find the three Tasks and how results flow between them.
+
+*Why:* `$(tasks.clone.results.COMMIT)` is what makes the image traceable. The build never decides its own version: it uses the commit the clone actually checked out.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat 22-source-pipeline/pipeline.yaml
+----
+
+.Verify: Find the commit in three places
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+grep -n 'tasks.clone.results.COMMIT' 22-source-pipeline/pipeline.yaml
+----
+
+The commit is used for the image tag, the `APP_VERSION` build argument, the `vcs-ref` label and the promote source. The same value ends up in the registry, in the image metadata and in the running application.
+====
+
+'''
+
+[#create-pipeline]
+=== 2. Create the Task and the Pipeline
+
+*What:* Create the `promote-image` Task and the `notes-app-build` Pipeline in your namespace.
+
+*Why:* `git-clone` and `buildah` come from the catalogue. Only the platform-specific step is defined here.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 22-source-pipeline/promote-task.yaml -f 22-source-pipeline/pipeline.yaml \
+  -n "$NS" --context {lab-context}
+----
+
+.Verify: The Pipeline is valid
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipeline describe notes-app-build -n "$NS" --context {lab-context}
+----
+
+The output lists the parameters with their defaults, the `source` workspace and the three Tasks (`clone`, `build`, `promote`).
+====
+
+'''
+
+[#run-pipeline]
+=== 3. Run the pipeline
+
+icon:clock[] ~2-3 minutes
+
+*What:* Start a PipelineRun against the workshop repository and follow its logs.
+
+*Why:* From now on this is the only way an image reaches `notes-app:latest`. Nobody uploads a local directory any more.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst < 22-source-pipeline/pipelinerun.yaml | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+TIP: The same run is easier to follow in the web console: *Pipelines* > *PipelineRuns* in your project shows each Task as a box, with its logs one click away.
+
+.Verify: The run succeeded and the commit tag exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun list -n "$NS" --context {lab-context}
+oc get istag -n "$NS" --context {lab-context} | grep '^notes-app:'
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                    STARTED         DURATION   STATUS
+notes-app-build-4kq9z   3 minutes ago   2m10s      Succeeded
+
+notes-app:3f2c1ab9e8...   image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:9b1e...   1 minute ago
+notes-app:latest          image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:9b1e...   1 minute ago
+----
+
+Both tags point to the same digest.
+====
+
+'''
+
+[#rollout]
+=== 4. Watch the automatic rollout
+
+*What:* Check the version the application reports.
+
+*Why:* Nobody ran `oc rollout`. The image trigger on the Deployment from Session 1 saw `notes-app:latest` move and started a zero-downtime rolling update.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+curl -sk "https://$ROUTE/api/info" | jq -r .version
+----
+
+.Verify: The running version is the Git commit
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+git ls-remote "$GIT_REPO_URL" refs/heads/main
+----
+
+[.console-output]
+[source,bash]
+----
+3f2c1ab9e8...    refs/heads/main
+----
+
+The version shown by the application and the commit on `main` are identical.
+====
+
+'''
+
+[#trace]
+=== 5. Trace a running pod back to its source
+
+*What:* Start from a running pod and work back to the Git commit and repository it was built from.
+
+*Why:* This is checklist item 3, *images are traceable*. During an incident or a CVE review, "which code is running in production?" must take seconds, not a meeting.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+POD_IMAGE=$(oc get pods -l app.kubernetes.io/name=notes-app -n "$NS" --context {lab-context} \
+  -o jsonpath='{.items[0].status.containerStatuses[0].imageID}')
+echo "$POD_IMAGE"
+oc get istag notes-app:latest -n "$NS" --context {lab-context} \
+  -o jsonpath='{.image.dockerImageMetadata.Config.Labels.vcs-url}{"\n"}{.image.dockerImageMetadata.Config.Labels.vcs-ref}{"\n"}'
+----
+
+.Verify: Pod digest, image labels and commit match
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-app@sha256:9b1e...
+https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git
+3f2c1ab9e8...
+----
+
+The pod runs a digest, the digest carries the repository and commit as labels, and the commit is a line in Git history.
+====
+
+'''
+
+== What This Solves (Compared to Session 1)
+
+[cols="2,3",options="header"]
+|===
+| Session 1 | Now
+
+| Built from a local directory, whatever its state
+| Built from a specific Git commit
+
+| Version typed in by hand
+| Version, tag and labels are the commit, automatically
+
+| Build and rollout are separate manual actions
+| A successful run promotes and rolls out
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Any image that builds gets promoted, vulnerable or not
+| xref:23-scan-gate.adoc[Step 3: Scan Gate]
+
+| Someone still has to start the pipeline
+| xref:24-pipelines-as-code.adoc[Step 4: Pipelines as Code]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| OpenShift Pipelines (this workshop)
+| Runs inside the cluster as normal pods, under tenant quota and SCCs. Supported by Red Hat and included in the OpenShift subscription.
+
+| BuildConfig with a Git source and webhook
+| Simpler for a single image, but no scan gate, no multi-step logic and no promotion step. Fine for prototypes.
+
+| An external CI system (GitHub Actions, GitLab CI, Jenkins)
+| A valid choice if the organisation already standardised on it. The pipeline stages and the promote-only-after-gate rule stay the same; the CI needs a registry credential and network access to the cluster.
+|===
+
+'''
+
+== Reset
+
+Removes the pipeline objects and runs. The application keeps running the last promoted image.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete pipelinerun -l tekton.dev/pipeline=notes-app-build -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 22-source-pipeline/pipeline.yaml -f 22-source-pipeline/promote-task.yaml \
+  -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+TIP: Skip the reset if you continue with Step 3, which updates this pipeline in place.

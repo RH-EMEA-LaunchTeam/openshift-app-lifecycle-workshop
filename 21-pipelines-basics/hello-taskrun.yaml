@@ -1,0 +1,15 @@
+# hello-taskrun.yaml
+# Purpose: One execution of the hello-platform Task. generateName gives every
+#          run a unique name, so create it with "oc create", not "oc apply".
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  generateName: hello-platform-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  taskRef:
+    name: hello-platform
+  params:
+    - name: team
+      value: notes-app

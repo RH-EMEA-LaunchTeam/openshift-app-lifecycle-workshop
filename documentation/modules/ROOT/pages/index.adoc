@@ -6,7 +6,7 @@ include::_attributes.adoc[]
 [.text-center.strong]
 == From "docker run on a VM" to a repeatable, monthly application lifecycle on OpenShift
 
-This workshop series follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image every month, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster, followed by two days of hands-on access so the team can repeat every step without fear of breaking anything.
+This workshop series follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image every month, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster, followed by one to two days of hands-on access so the team can repeat every step without fear of breaking anything.
 
 The series is written for platform teams that are bringing many existing container workloads, often built by third-party vendors and running with `docker` or `podman` on standalone VMs, onto a shared OpenShift platform.
 
@@ -63,13 +63,43 @@ The series is written for platform teams that are bringing many existing contain
 * xref:16-admission-checklist.adoc#tender-wording[Tender wording]
 
 [.tiles.browse]
-== Upcoming Sessions
+== Session 2: Build Pipelines
 
 [.tile]
-.xref:20-build-pipelines.adoc[Session 2: Build pipelines]
-* Tekton: source to image
-* Scan and push
-* Importing vendor images
+.xref:20-build-pipelines.adoc[Overview and catch-up]
+* xref:20-build-pipelines.adoc#catch-up[Session 1 end state in 3 minutes]
+
+[.tile]
+.xref:21-pipelines-basics.adoc[Step 1: Pipelines basics]
+* xref:21-pipelines-basics.adoc#catalogue[Supported Task catalogue]
+* xref:21-pipelines-basics.adoc#what-ran[Tasks are pods]
+
+[.tile]
+.xref:22-source-pipeline.adoc[Step 2: Source to image]
+* xref:22-source-pipeline.adoc#run-pipeline[Build from Git]
+* xref:22-source-pipeline.adoc#trace[Traceable to the commit]
+
+[.tile]
+.xref:23-scan-gate.adoc[Step 3: Scan gate]
+* xref:23-scan-gate.adoc#run-fail[Block critical CVEs]
+
+[.tile]
+.xref:24-pipelines-as-code.adoc[Step 4: Pipelines as Code]
+* xref:24-pipelines-as-code.adoc#pull-request[Pull requests build]
+* xref:24-pipelines-as-code.adoc#merge[Merges promote]
+
+[.tile]
+.xref:25-vendor-image-intake.adoc[Step 5: Vendor image intake]
+* xref:25-vendor-image-intake.adoc#run-intake[Automated intake checks]
+* xref:25-vendor-image-intake.adoc#level-2[Re-layer without source]
+* xref:25-vendor-image-intake.adoc#level-3[Root in a user namespace]
+
+[.tile]
+.xref:26-pipeline-service.adoc[Step 6: Pipelines as a service]
+* xref:26-pipeline-service.adoc#catalogue[Publish once, reuse everywhere]
+
+[.tiles.browse]
+== Upcoming Sessions
 
 [.tile]
 .xref:30-gitops-deploy.adoc[Session 3: GitOps deployment]

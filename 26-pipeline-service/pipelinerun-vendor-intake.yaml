@@ -1,0 +1,20 @@
+# pipelinerun-vendor-intake.yaml
+# Purpose: A tenant runs the centrally published vendor-intake pipeline on the
+#          re-layered image from Step 5. Create with "oc create".
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: vendor-intake-central-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    resolver: cluster
+    params:
+      - {name: kind, value: pipeline}
+      - {name: name, value: vendor-intake}
+      - {name: namespace, value: platform-pipelines}
+  params:
+    - {name: source-istag, value: "notes-legacy-relayered:latest"}
+    - {name: approved-name, value: notes-vendor}
+    - {name: accept-critical-cves, value: "true"}

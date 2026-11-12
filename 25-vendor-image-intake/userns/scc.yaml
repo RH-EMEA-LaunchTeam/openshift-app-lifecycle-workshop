@@ -1,0 +1,53 @@
+# scc.yaml
+# Purpose: Remediation level 3 - a narrowly scoped exception for images that
+#          genuinely need UID 0. Allows root *inside* the container only when
+#          the pod runs in its own Linux user namespace (hostUsers: false), so
+#          UID 0 in the container maps to an unprivileged UID on the node.
+#          No capabilities, no privilege escalation, no host access.
+#          Cluster-scoped: applied by the platform team, granted per ServiceAccount.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: vendor-root-userns
+  labels:
+    app.kubernetes.io/part-of: notes-app
+  annotations:
+    kubernetes.io/description: >-
+      Root inside the container, mapped to an unprivileged host UID through a
+      pod-level user namespace. Exception for vendor images that cannot run as
+      an arbitrary UID. Grant to a dedicated ServiceAccount only.
+priority: null
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+requiredDropCapabilities:
+  - ALL
+readOnlyRootFilesystem: false
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+userNamespaceLevel: RequirePodLevel
+volumes:
+  - configMap
+  - csi
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - persistentVolumeClaim
+  - projected
+  - secret
+users: []
+groups: []

@@ -1,0 +1,310 @@
+= Step 4 - Pipelines as Code: Pull Requests Build, Merges Promote
+include::_attributes.adoc[]
+
+TIP: This step is optional in the hands-on window. It needs a GitHub account and about 30 minutes.
+
+So far someone has started every pipeline with `oc create`. This step connects your own fork of the workshop repository to your namespace with *Pipelines as Code*, the Git-native trigger in OpenShift Pipelines. The pipeline definitions live in the repository, next to the code, in the `.tekton/` directory:
+
+* A *pull request* that changes `app/` builds and scans the image, and reports the result as a check on the pull request. It does *not* promote.
+* A *merge (push) to main* builds, scans and promotes, which rolls out the application.
+
+This is the same pull-request workflow proposed for tenant onboarding in Session 3: changes are reviewed in Git, and what reaches the cluster is what was approved.
+
+== Prerequisites
+
+* xref:23-scan-gate.adoc[Step 3] completed: `notes-app-build` (version 2) exists in your namespace
+* A GitHub account, and `$GITHUB_FORK_URL` and `$PAC_WEBHOOK_URL` set in `myenv.sh` (see xref:00-setup.adoc#export-variables[setup])
+
+== How It Works
+
+[source,text]
+----
+ your fork on GitHub                         your namespace
+ -------------------                         --------------
+ push / pull request  --- webhook --->  Pipelines as Code controller
+ .tekton/*.yaml                              |  matches Repository "notes-app"
+                                             v
+                                       PipelineRun of notes-app-build
+                                             |
+ commit status / check  <-- report ----------+
+----
+
+[cols="2,4",options="header"]
+|===
+| Object | Purpose
+
+| `Repository` (in your namespace)
+| Links one Git repository URL to one namespace, and names the Secret with the Git token
+
+| `.tekton/notes-app-pull-request.yaml`
+| PipelineRun template for pull requests (`promote: "false"`)
+
+| `.tekton/notes-app-push.yaml`
+| PipelineRun template for pushes to `main`
+
+| `github-pac` Secret
+| A GitHub token so Pipelines as Code can report results, and the webhook secret that proves events come from GitHub
+|===
+
+Pipelines as Code fills in `{{ repo_url }}` and `{{ revision }}` with the repository and the exact commit of the event.
+
+NOTE: This step uses a webhook and a personal token, so each participant works independently. A platform team usually installs one *GitHub App* for the whole organisation instead (`tkn pac bootstrap`). Then tenants only create the `Repository` object, and no personal tokens are involved.
+
+== Steps to Apply
+
+[#fork]
+=== 1. Fork the repository and create a token
+
+*What:* Fork the workshop repository into your GitHub account, then create a fine-grained personal access token for that fork only.
+
+*Why:* You need a repository you can push to, and Pipelines as Code needs a token to report pipeline results back to it.
+
+. Open link:{repo-url}[the workshop repository] and click *Fork*.
+. In GitHub, go to *Settings* > *Developer settings* > *Fine-grained tokens* > *Generate new token*.
+. *Repository access*: *Only select repositories*, then pick your fork.
+. *Permissions*: *Commit statuses*, *Pull requests* and *Issues* read and write. *Contents* read-only. *Metadata* read-only is added automatically.
+. Generate the token and keep it in your shell only:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+read -rs GITHUB_TOKEN && export GITHUB_TOKEN
+----
+
+.Verify: The fork and token work
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+echo "$GITHUB_FORK_URL"
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/${GITHUB_FORK_URL#https://github.com/}" | jq -r .full_name
+----
+
+[.console-output]
+[source,bash]
+----
+https://github.com/<your-user>/openshift-app-lifecycle-workshop
+<your-user>/openshift-app-lifecycle-workshop
+----
+====
+
+'''
+
+[#repository]
+=== 2. Connect the fork to your namespace
+
+*What:* Create the `github-pac` Secret and the `Repository` object.
+
+*Why:* The `Repository` object tells Pipelines as Code which namespace runs pipelines for which Git URL. One repository maps to one namespace, which keeps tenants apart.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export WEBHOOK_SECRET=$(openssl rand -hex 20)
+oc create secret generic github-pac \
+  --from-literal=provider.token="$GITHUB_TOKEN" \
+  --from-literal=webhook.secret="$WEBHOOK_SECRET" \
+  -n "$NS" --context {lab-context}
+envsubst < 24-pipelines-as-code/repository.yaml | oc apply -f - -n "$NS" --context {lab-context}
+----
+
+.Verify: The Repository exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get repository notes-app -n "$NS" --context {lab-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME        URL                                                            SUCCEEDED   REASON   STARTTIME   COMPLETIONTIME
+notes-app   https://github.com/<your-user>/openshift-app-lifecycle-workshop
+----
+
+The status columns stay empty until the first event arrives.
+====
+
+'''
+
+[#webhook]
+=== 3. Add the webhook to your fork
+
+*What:* Tell GitHub to send push and pull request events to the Pipelines as Code controller.
+
+*Why:* The webhook is how the cluster hears about changes. The shared secret lets the controller reject events that do not come from GitHub.
+
+Print the values you need:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+echo "Payload URL: $PAC_WEBHOOK_URL"
+echo "Secret:      $WEBHOOK_SECRET"
+----
+
+In your fork on GitHub: *Settings* > *Webhooks* > *Add webhook*:
+
+[cols="2,3",options="header"]
+|===
+| Field | Value
+
+| Payload URL
+| The value of `$PAC_WEBHOOK_URL`
+
+| Content type
+| `application/json`
+
+| Secret
+| The value of `$WEBHOOK_SECRET`
+
+| SSL verification
+| *Disable* (the demo cluster uses a self-signed certificate; never do this in production)
+
+| Events
+| *Let me select individual events*: *Pull requests* and *Pushes*
+|===
+
+.Verify: GitHub reached the controller
+[%collapsible]
+====
+In *Settings* > *Webhooks*, open the webhook and select *Recent Deliveries*. The initial `ping` event shows a green tick and response code `200`.
+====
+
+'''
+
+[#pull-request]
+=== 4. Open a pull request
+
+icon:clock[] ~3 minutes for the pipeline
+
+*What:* Change something under `app/` on a new branch and open a pull request against `main` *in your fork*.
+
+*Why:* The pull request is where the review happens. The pipeline result shows next to the code, before anyone merges.
+
+Use the GitHub web editor, so you need no Git credentials on your workstation:
+
+. In your fork, open `app/Containerfile` and click the pencil icon (*Edit this file*).
+. Change the `summary` label, for example to `summary="Workshop reference application, built by Pipelines as Code"`.
+. Click *Commit changes*, select *Create a new branch for this commit and start a pull request*, and confirm.
+. On the *Open a pull request* page, check that the *base repository* is *your fork* (not the upstream repository) and the base branch is `main`, then click *Create pull request*.
+
+.Verify: The pull request runs the pipeline without promoting
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun list -n "$NS" --context {lab-context} | head -2
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                           STARTED          DURATION   STATUS
+notes-app-pull-request-8r2lp   40 seconds ago   ---        Running
+----
+
+When it finishes, the pull request in GitHub shows a passed check. The `promote` Task was skipped, so the application version did not change:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun describe --last -n "$NS" --context {lab-context} | grep -A6 -i 'skipped'
+----
+====
+
+'''
+
+[#merge]
+=== 5. Merge and watch the rollout
+
+*What:* Merge the pull request in GitHub.
+
+*Why:* The merge is the approval. The push to `main` that it creates triggers the promoting pipeline, which rolls out the application.
+
+.Verify: The merge commit is running
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-app -n "$NS" --context {lab-context}
+curl -sk "https://$ROUTE/api/info" | jq -r .version
+git ls-remote "$GITHUB_FORK_URL" refs/heads/main
+----
+
+The version reported by the application is the merge commit on `main` of your fork.
+====
+
+'''
+
+== What This Solves (Compared to Step 3)
+
+[cols="2,3",options="header"]
+|===
+| Step 3 | Now
+
+| A person starts each run
+| Git events start runs
+
+| Pipeline definition only in the cluster
+| Trigger definitions versioned with the code in `.tekton/`
+
+| Results only in the cluster
+| Results reported on the pull request, where reviewers look
+
+| Anything run by hand can be promoted
+| Only merged code is promoted
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Images that are delivered, not built from source
+| xref:25-vendor-image-intake.adoc[Step 5: Vendor Image Intake]
+
+| Deployment manifests are still applied by hand
+| Session 3: GitOps deployment with Argo CD
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines] (see *Pipelines as Code*)
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Pipelines as Code with a webhook (this step)
+| Each tenant connects their own repository. Good for a workshop and for a handful of repositories.
+
+| Pipelines as Code with a GitHub App
+| The recommended setup for an organisation: one App installed by the platform team, no personal tokens, results shown as GitHub Checks.
+
+| Tekton Triggers (EventListener, TriggerBinding, TriggerTemplate)
+| The lower-level building blocks. More flexible, more YAML, and the pipeline definition stays in the cluster rather than next to the code.
+|===
+
+'''
+
+== Reset
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete repository notes-app -n "$NS" --context {lab-context} --ignore-not-found
+oc delete secret github-pac -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+Delete the webhook in your fork (*Settings* > *Webhooks*), and delete the personal access token in GitHub when you no longer need it.

@@ -1,0 +1,434 @@
+= Step 5 - Vendor Image Intake: Images You Cannot Rebuild
+include::_attributes.adoc[]
+
+Steps 2 to 4 assume you have the source code. For most workloads on a platform that hosts third-party software, you do not: the vendor delivers a finished image, often built for `docker run` on a VM, running as root, with configuration and sometimes credentials baked in. You cannot fix the Containerfile, and "ask the vendor" can take a year.
+
+This step builds an *intake* pipeline for such images and then works through four *remediation levels*, from cheapest to most expensive, using the legacy image from Session 1 as the "vendor" image. The key lesson: *most images that "need root" only need a writable directory and an unprivileged port*, and you can provide both without the vendor's source.
+
+== Prerequisites
+
+* xref:23-scan-gate.adoc[Step 3] completed: `acs-image-scan`, `promote-image` and `notes-app-build` (version 2) exist in your namespace
+* `notes-legacy:latest` exists in your namespace (built by the xref:20-build-pipelines.adoc#catch-up[catch-up script])
+* `$GIT_REPO_URL` set
+* Remediation level 3 needs cluster-admin for one command, and OpenShift {userns-ocp-version} or later. In the live session the instructor runs it.
+
+== How It Works
+
+=== The intake pipeline
+
+[source,text]
+----
+                   +--> inspect   (credentials in ENV? root user? port < 1024?)
+ inbox image  -----+--> scan      (critical CVEs, ACS)                          --> gate --> promote to <name>:approved
+ notes-legacy      +--> uid-test  (does it run unchanged under restricted-v2?)
+----
+
+The three checks run in parallel and never fail on their own. Each returns a verdict (`PASS`, `WARN` or `FAIL`). The `gate` Task combines them: any `FAIL` rejects the image. The one exception is critical CVEs, which can be accepted with an explicit, recorded risk acceptance. You cannot patch a vendor's base image yourself, so sometimes you have to accept the risk for a limited time.
+
+=== The remediation levels
+
+[cols="1,3,3,3",options="header"]
+|===
+| Level | What you change | Needs | When to use
+
+| 1
+| Only the *Deployment*: a writable volume over the data directory, environment variables for the port and credentials
+| Nothing from the vendor, no rebuild
+| The app writes to a few known paths. Try this first.
+
+| 2
+| *Re-layer* the image: one thin layer on top of the unchanged vendor image fixes permissions and defaults
+| A Containerfile in your repository and the build pipeline
+| The app writes inside its own install directory, or you want the image itself to pass intake
+
+| 3
+| Run it as *root inside a user namespace*: UID 0 in the container is an unprivileged UID on the node
+| A platform exception: a dedicated SCC granted to a dedicated ServiceAccount
+| The app really checks for UID 0, or changes file ownership at startup
+
+| 4
+| Grant `anyuid` or `privileged`, keep it on a VM, or reject it
+| A formal, time-limited exception owned by a named person
+| Last resort. See xref:11-legacy-app.adoc#why-not-anyuid[Session 1, Step 1].
+|===
+
+== Steps to Apply
+
+[#inbox]
+=== 1. Look at the delivered image
+
+*What:* Treat `notes-legacy:latest` as an image a vendor just delivered into your namespace (the "inbox").
+
+*Why:* Intake starts from the image, not from source. In real life you would import it from the vendor's registry first.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get istag notes-legacy:latest -n "$NS" --context {lab-context}
+----
+
+TIP: To bring a real vendor image into the inbox, import it into an ImageStream, for example `oc import-image vendor-inbox:1.0 --from=registry.example.com/vendor/app:1.0 --confirm -n "$NS" --context {lab-context}`. On a platform with a central registry, the inbox is a quarantine repository in that registry.
+
+.Verify: The image is there
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME                  IMAGE REFERENCE                                                                        UPDATED
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy@sha256:...   20 minutes ago
+----
+====
+
+'''
+
+[#run-intake]
+=== 2. Run the intake pipeline on the image as delivered
+
+icon:clock[] ~2 minutes
+
+*What:* Create the three check Tasks, the gate and the `vendor-intake` Pipeline, then run it on `notes-legacy:latest`.
+
+*Why:* This is the Session 1 checklist, automated. Instead of reading a Containerfile you do not have, the pipeline reads the image's configuration and actually runs the image the way the platform would.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 25-vendor-image-intake/inspect-task.yaml \
+         -f 25-vendor-image-intake/uid-test-task.yaml \
+         -f 25-vendor-image-intake/gate-task.yaml \
+         -f 25-vendor-image-intake/pipeline.yaml \
+  -n "$NS" --context {lab-context}
+oc create -f 25-vendor-image-intake/pipelinerun-intake.yaml -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+.Verify: The image is rejected, for three reasons
+[%collapsible]
+====
+The `inspect` Task:
+
+[.console-output]
+[source,bash]
+----
+[inspect : evaluate] FAIL  credential in image environment: API_TOKEN=***9c21
+[inspect : evaluate] WARN  image runs as root (USER=unset)
+[inspect : evaluate] WARN  privileged port exposed: 80/tcp
+[inspect : evaluate] verdict: FAIL
+----
+
+The `uid-test` Task:
+
+[.console-output]
+[source,bash]
+----
+[uid-test : run] pod phase: Failed (running for 0s)
+[uid-test : run] assigned: scc=restricted-v2 runAsUser=1000690000
+[uid-test : run] --- last log lines ---
+[uid-test : run] PermissionError: [Errno 13] Permission denied: '/data/notes.txt'
+[uid-test : run] verdict: FAIL
+----
+
+The `gate` Task:
+
+[.console-output]
+[source,bash]
+----
+[gate : decide] CHECK                      RESULT
+[gate : decide] Image configuration        FAIL
+[gate : decide] Critical CVEs (ACS)        FAIL
+[gate : decide] Runs as arbitrary UID      FAIL
+[gate : decide] INTAKE REJECTED: the image is not promoted.
+----
+
+These are the same three findings you made by hand in Session 1, now in two minutes and with no source code.
+====
+
+'''
+
+[#level-1]
+=== 3. Level 1: fix the environment, not the image
+
+*What:* Deploy the unchanged vendor image with an `emptyDir` volume over `/data`, `PORT=8080`, and the token taken from a Secret.
+
+*Why:* The crash said "permission denied on `/data`", not "I need root". Give the random UID a writable `/data` and an unprivileged port, and the image runs under the default `restricted-v2` SCC with no exception at all.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-vendor -n "$NS" --context {lab-context} --timeout=120s
+----
+
+.Verify: The vendor image runs as a random non-root UID
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -l app.kubernetes.io/name=notes-vendor -n "$NS" --context {lab-context} \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{" runAsUser="}{.items[0].spec.containers[0].securityContext.runAsUser}{"\n"}'
+oc exec deploy/notes-vendor -n "$NS" --context {lab-context} -- \
+  python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8080/api/info').read().decode())"
+----
+
+[.console-output]
+[source,bash]
+----
+restricted-v2 runAsUser=1000690000
+{"api_token":"configured (ends with ...a1b2)","environment":"production","greeting":"Hello from the VM","pod":"notes-vendor-...","storage":"local-file","version":"1.0-legacy"}
+----
+
+The token now ends with the characters of *your* Secret, not the baked-in `...9c21`.
+
+This works, but each team that deploys the image has to know and repeat these fixes, and the image itself still fails intake. Level 2 moves the fixes into the image.
+====
+
+'''
+
+[#level-2]
+=== 4. Level 2: re-layer the vendor image
+
+icon:clock[] ~5 minutes (one build, two intake runs)
+
+*What:* Build a thin layer on top of the unchanged vendor image with the existing build pipeline, then run intake on the result. Run it once without, and once with, a risk acceptance for the vendor's CVEs.
+
+*Why:* A re-layered image fixes permissions and defaults once, for every deployment, and needs no vendor source. The original vendor layers stay byte-for-byte identical, which matters for vendor support.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat 25-vendor-image-intake/relayer/Containerfile
+envsubst < 25-vendor-image-intake/pipelinerun-relayer.yaml | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+The re-layered image is now `notes-legacy-relayered:latest`. Run intake on it without accepting CVEs:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+ACCEPT_CVES=false envsubst < 25-vendor-image-intake/pipelinerun-intake-relayered.yaml \
+  | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+Only the CVEs remain. You cannot fix them without the vendor, so record a time-limited risk acceptance and run intake again:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+ACCEPT_CVES=true envsubst < 25-vendor-image-intake/pipelinerun-intake-relayered.yaml \
+  | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+.Verify: Approved, with the exception recorded on the image
+[%collapsible]
+====
+The first intake run on the re-layered image:
+
+[.console-output]
+[source,bash]
+----
+[gate : decide] CHECK                      RESULT
+[gate : decide] Image configuration        WARN
+[gate : decide] Critical CVEs (ACS)        FAIL
+[gate : decide] Runs as arbitrary UID      PASS
+[gate : decide] INTAKE REJECTED: the image is not promoted.
+----
+
+`WARN` remains because port 80 is still declared in the vendor's layers. It is only metadata now: the app listens on 8080. The second run ends with `INTAKE APPROVED`, then:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get istag notes-vendor:approved -n "$NS" --context {lab-context}
+oc get imagestream notes-vendor -n "$NS" --context {lab-context} \
+  -o jsonpath='{.metadata.annotations.notes-app\.example\.com/intake-note}{"\n"}'
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                    IMAGE REFERENCE                                                                         UPDATED
+notes-vendor:approved   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy-relayered@sha256:...   10 seconds ago
+critical CVEs accepted at intake on 2026-11-18; review at next vendor release
+----
+====
+
+WARNING: Clearing `API_TOKEN` in the new layer removes it from the container's environment, but not from the image history: `oc image info` on the re-layered image still shows the old value in the layer that set it. A credential that was ever in an image must be treated as leaked and rotated by the vendor.
+
+'''
+
+[#level-3]
+=== 5. Level 3: root inside a user namespace
+
+icon:clock[] ~2 minutes. Needs cluster-admin for the first command block.
+
+*What:* Run the *unchanged* vendor image as UID 0, but inside a pod-level Linux user namespace (`hostUsers: false`). UID 0 in the container is mapped to an unprivileged, unique UID range on the node.
+
+*Why:* Some images really do need UID 0: they check for it, or change file ownership at startup. User namespaces give these images root *inside* the container without giving them root *on the node*, which is the risk that makes `anyuid` dangerous on a shared platform.
+
+The platform team creates the SCC once and grants it to one dedicated ServiceAccount (cluster-admin):
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat 25-vendor-image-intake/userns/scc.yaml
+oc apply -f 25-vendor-image-intake/userns/scc.yaml --context {lab-context}
+oc apply -f 25-vendor-image-intake/userns/serviceaccount.yaml -n "$NS" --context {lab-context}
+oc adm policy add-scc-to-user vendor-root-userns -z vendor-root -n "$NS" --context {lab-context}
+----
+
+The tenant deploys the image with that ServiceAccount:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 25-vendor-image-intake/userns/deployment.yaml -n "$NS" --context {lab-context}
+oc rollout status deploy/notes-vendor-userns -n "$NS" --context {lab-context} --timeout=120s
+----
+
+.Verify: Root in the container, not root on the node
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc exec deploy/notes-vendor-userns -n "$NS" --context {lab-context} -- id
+oc exec deploy/notes-vendor-userns -n "$NS" --context {lab-context} -- cat /proc/self/uid_map
+oc exec deploy/notes-vendor-userns -n "$NS" --context {lab-context} -- ls -ld /data
+----
+
+[.console-output]
+[source,bash]
+----
+uid=0(root) gid=0(root) groups=0(root)
+         0 2147483648      65536
+drwxr-xr-x. 1 root root 24 Nov 18 09:41 /data
+----
+
+`uid_map` reads: UID 0 in the container is UID 2147483648 on the node, for a range of 65536 IDs. The exact host number varies per pod. The process writes to the root-owned `/data` in the image without an `emptyDir`, and the node sees an unprivileged user.
+
+The exception is still an exception: it is granted to one ServiceAccount in one namespace, and other pods in the namespace keep running under `restricted-v2`.
+====
+
+'''
+
+[#decide]
+=== 6. Decide and record
+
+*What:* Use the intake result and the remediation levels to decide what happens to a vendor image, and record exceptions where the platform team can review them.
+
+*Why:* Every exception that nobody records becomes permanent. The intake pipeline produces the evidence, and the decision still needs an owner.
+
+[cols="2,3",options="header"]
+|===
+| Intake result | Decision
+
+| Approved, no exceptions
+| Onboard. Tier 1 or 2 in the xref:16-admission-checklist.adoc#maturity-tiers[maturity tiers].
+
+| Fails `uid-test`, passes with level 1 or 2
+| Onboard with the documented fix. Ask the vendor to adopt it in their next release (tender wording, xref:16-admission-checklist.adoc#tender-wording[Session 1, Step 6]).
+
+| Needs level 3
+| Platform exception: dedicated ServiceAccount, owner, expiry date, review at every vendor release.
+
+| Credentials baked in
+| Reject until the vendor rotates the credential and removes it from the image. Re-layering cannot remove it from history.
+
+| Critical CVEs, no vendor fix
+| Accept for a limited time (recorded on the image), or reject. Not the pipeline's decision; it belongs to the security owner.
+|===
+
+.Verify: Exercise
+[%collapsible]
+====
+Pick one vendor image you run today. Without looking at its documentation, predict which of the three checks it fails and which remediation level it needs. If you can, import it into your namespace in the hands-on window and run `vendor-intake` on it to check your prediction.
+====
+
+'''
+
+== What This Solves
+
+[cols="2,3",options="header"]
+|===
+| Before | Now
+
+| "The vendor image needs root", accepted without proof
+| An automated test shows exactly what fails under the default SCC
+
+| Fixes applied ad hoc in each Deployment
+| A ladder from cheapest to most expensive fix, with level 2 producing an image that passes intake
+
+| `anyuid` as the only answer for root images
+| Root inside a user namespace, mapped to an unprivileged node UID
+
+| Risk acceptance by e-mail, if at all
+| Recorded on the approved image, with a date
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Every tenant has a copy of the intake Tasks
+| xref:26-pipeline-service.adoc[Step 6: Pipelines as a Service]
+
+| Approved images are only in this namespace
+| Registry design discussion: a central registry with quarantine and approved repositories
+
+| A new vendor release has to go through intake again
+| Session 6: the monthly patch cycle
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/{userns-ocp-version}/html/nodes/index[Nodes] (see *Running pods in Linux user namespaces*)
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/{userns-ocp-version}/html/authentication_and_authorization/managing-pod-security-policies[Managing security context constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/{userns-ocp-version}/html/images/creating-images#use-uid_create-images[Creating images: support arbitrary user IDs]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Intake pipeline with remediation levels (this step)
+| Evidence-based, repeatable, and keeps exceptions small and visible.
+
+| Grant `anyuid` to every vendor workload
+| Fast, but each one is root on a shared node. Does not scale, see xref:11-legacy-app.adoc#why-not-anyuid[Session 1, Step 1].
+
+| Rebuild vendor software from scratch on UBI
+| Cleanest image, but usually breaks vendor support. Only for open source components you can build yourself.
+
+| Keep root-requiring vendor apps on VMs
+| A valid outcome. The intake result makes the decision explicit instead of a default.
+|===
+
+'''
+
+== Reset
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 25-vendor-image-intake/userns/deployment.yaml -f 25-vendor-image-intake/userns/serviceaccount.yaml \
+  -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc delete pipelinerun -l tekton.dev/pipeline=vendor-intake -n "$NS" --context {lab-context} --ignore-not-found
+oc delete imagestream notes-vendor notes-legacy-relayered -n "$NS" --context {lab-context} --ignore-not-found
+----
+
+Cluster-admin only, when no namespace uses it any more:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f 25-vendor-image-intake/userns/scc.yaml --context {lab-context} --ignore-not-found
+----

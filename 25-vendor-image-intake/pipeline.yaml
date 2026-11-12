@@ -1,0 +1,63 @@
+# pipeline.yaml
+# Purpose: Intake pipeline for images the team cannot rebuild from source
+#          (vendor-delivered images). The image must already be in this
+#          namespace (the "inbox"). Three checks run in parallel, a gate
+#          decides, and only an approved image is promoted to <approved-name>:approved.
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: vendor-intake
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: source-istag
+      type: string
+      description: ImageStreamTag in this namespace to check, for example notes-legacy:latest
+    - name: approved-name
+      type: string
+      description: ImageStream that receives approved images
+    - name: accept-critical-cves
+      type: string
+      description: '"true" records a risk acceptance instead of rejecting on critical CVEs'
+      default: "false"
+  tasks:
+    - name: inspect
+      taskRef:
+        name: image-inspect
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
+
+    - name: scan
+      taskRef:
+        name: acs-image-scan
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
+        - {name: fail-on-critical, value: "false"}
+
+    - name: uid-test
+      taskRef:
+        name: arbitrary-uid-test
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
+
+    - name: gate
+      taskRef:
+        name: intake-gate
+      params:
+        - {name: inspect, value: $(tasks.inspect.results.verdict)}
+        - {name: scan, value: $(tasks.scan.results.verdict)}
+        - {name: uid-test, value: $(tasks.uid-test.results.verdict)}
+        - {name: accept-critical-cves, value: $(params.accept-critical-cves)}
+
+    - name: promote
+      runAfter: [gate]
+      taskRef:
+        name: promote-image
+      params:
+        - {name: source, value: $(params.source-istag)}
+        - {name: target, value: "$(params.approved-name):approved"}
+        - {name: note, value: $(tasks.gate.results.note)}

@@ -1,0 +1,26 @@
+# acs-central.yaml
+# Purpose: ACS Central (management plane and image scanner) for the workshop
+#          cluster. Applied by the instructor after the ACS operator is installed.
+#          The admin password Secret (central-admin-pass) is created by
+#          platform-setup.sh with "oc create secret", never stored in Git.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stackrox
+  labels:
+    app.kubernetes.io/part-of: notes-app
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  central:
+    adminPasswordSecret:
+      name: central-admin-pass
+    exposure:
+      route:
+        enabled: true

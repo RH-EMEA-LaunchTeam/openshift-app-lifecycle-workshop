@@ -1,0 +1,14 @@
+# acs-secured-cluster.yaml
+# Purpose: Register the workshop cluster with its own ACS Central (sensor,
+#          collector, admission controller). Applied by platform-setup.sh after
+#          the init bundle secrets exist in the stackrox namespace.
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  clusterName: lab
+  centralEndpoint: central.stackrox.svc:443

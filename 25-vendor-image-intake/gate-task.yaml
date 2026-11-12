@@ -1,0 +1,47 @@
+# gate-task.yaml
+# Purpose: Combine the intake checks into one decision. Any FAIL stops the
+#          intake, except critical CVEs when an explicit, recorded risk
+#          acceptance is passed in (accept-critical-cves="true").
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: intake-gate
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - {name: inspect, type: string}
+    - {name: scan, type: string}
+    - {name: uid-test, type: string}
+    - name: accept-critical-cves
+      type: string
+      default: "false"
+  results:
+    - name: note
+      description: Exception text to record on the approved image, or "none"
+  steps:
+    - name: decide
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      env:
+        - {name: INSPECT, value: $(params.inspect)}
+        - {name: SCAN, value: $(params.scan)}
+        - {name: UID_TEST, value: $(params.uid-test)}
+        - {name: ACCEPT, value: $(params.accept-critical-cves)}
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        note=none
+        if [[ "$SCAN" == FAIL && "$ACCEPT" == "true" ]]; then
+          SCAN="FAIL (risk accepted)"
+          note="critical CVEs accepted at intake on $(date -u +%F); review at next vendor release"
+        fi
+        printf '%-26s %s\n' "CHECK" "RESULT" \
+          "Image configuration" "$INSPECT" \
+          "Critical CVEs (ACS)" "$SCAN" \
+          "Runs as arbitrary UID" "$UID_TEST"
+        printf '%s' "$note" > "$(results.note.path)"
+        if [[ "$INSPECT" == FAIL || "$SCAN" == FAIL || "$UID_TEST" == FAIL ]]; then
+          echo "INTAKE REJECTED: the image is not promoted."
+          exit 1
+        fi
+        echo "INTAKE APPROVED"

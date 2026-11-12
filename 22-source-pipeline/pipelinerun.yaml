@@ -1,0 +1,19 @@
+# pipelinerun.yaml
+# Purpose: Run the notes-app build pipeline against the workshop repository.
+#          ${GIT_REPO_URL} is filled in with envsubst. Create with "oc create".
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: notes-app-build-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    name: notes-app-build
+  params:
+    - name: git-url
+      value: ${GIT_REPO_URL}
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pipeline-ws

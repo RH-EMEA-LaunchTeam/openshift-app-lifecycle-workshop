@@ -1,0 +1,82 @@
+# vendor-intake-pipeline.yaml
+# Purpose: The Step 5 intake pipeline, published by the platform team in the
+#          platform-pipelines namespace. Tenants reference it with the cluster
+#          resolver; the checks and the gate are owned and versioned centrally.
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: vendor-intake
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: source-istag
+      type: string
+      description: ImageStreamTag in this namespace to check, for example notes-legacy:latest
+    - name: approved-name
+      type: string
+      description: ImageStream that receives approved images
+    - name: accept-critical-cves
+      type: string
+      description: '"true" records a risk acceptance instead of rejecting on critical CVEs'
+      default: "false"
+  tasks:
+    - name: inspect
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: image-inspect}
+          - {name: namespace, value: platform-pipelines}
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
+
+    - name: scan
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: acs-image-scan}
+          - {name: namespace, value: platform-pipelines}
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
+        - {name: fail-on-critical, value: "false"}
+
+    - name: uid-test
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: arbitrary-uid-test}
+          - {name: namespace, value: platform-pipelines}
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
+
+    - name: gate
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: intake-gate}
+          - {name: namespace, value: platform-pipelines}
+      params:
+        - {name: inspect, value: $(tasks.inspect.results.verdict)}
+        - {name: scan, value: $(tasks.scan.results.verdict)}
+        - {name: uid-test, value: $(tasks.uid-test.results.verdict)}
+        - {name: accept-critical-cves, value: $(params.accept-critical-cves)}
+
+    - name: promote
+      runAfter: [gate]
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: promote-image}
+          - {name: namespace, value: platform-pipelines}
+      params:
+        - {name: source, value: $(params.source-istag)}
+        - {name: target, value: "$(params.approved-name):approved"}
+        - {name: note, value: $(tasks.gate.results.note)}

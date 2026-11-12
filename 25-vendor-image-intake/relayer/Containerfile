@@ -1,0 +1,25 @@
+# Containerfile
+# Purpose: Remediation level 2 - re-layer a vendor image you cannot rebuild from
+#          source. Adds one thin layer on top of the unchanged vendor image that
+#          makes it run as an arbitrary non-root UID. No vendor source needed.
+#          Built by the notes-app-build pipeline with VENDOR_IMAGE as build arg.
+ARG VENDOR_IMAGE
+FROM ${VENDOR_IMAGE}
+
+USER 0
+# The random UID is always in group 0: give group 0 the owner's permissions on
+# every path the application writes to.
+RUN mkdir -p /data && \
+    chgrp -R 0 /data && \
+    chmod -R g=u /data
+
+# Unprivileged port, explicit data directory, and the baked-in token cleared
+# from the runtime environment. The token is still visible in the image
+# history, so it must be treated as leaked and rotated by the vendor.
+ENV PORT=8080 \
+    DATA_DIR=/data \
+    API_TOKEN=""
+EXPOSE 8080
+
+# Any non-zero UID. OpenShift replaces it with the namespace's random UID.
+USER 1001

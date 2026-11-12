@@ -1,0 +1,81 @@
+# uid-test-task.yaml
+# Purpose: The cheapest admission test there is: run the image, unchanged, the
+#          way the platform runs every tenant workload (restricted-v2 SCC,
+#          random UID, group 0, no capabilities) and see whether it stays up.
+#          Never fails the task; the verdict is decided by the intake gate.
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: arbitrary-uid-test
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: image
+      type: string
+      description: Full image reference
+    - name: settle-seconds
+      type: string
+      description: How long the container must stay running to pass
+      default: "20"
+  results:
+    - name: verdict
+      description: PASS or FAIL
+  steps:
+    - name: run
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      env:
+        - name: IMAGE
+          value: $(params.image)
+        - name: SETTLE
+          value: $(params.settle-seconds)
+        - name: POD
+          value: uid-test-$(context.taskRun.name)
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+        cat <<YAML | oc apply -f - >/dev/null
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: ${POD}
+          labels:
+            app.kubernetes.io/part-of: notes-app
+            app.kubernetes.io/component: uid-test
+          annotations:
+            openshift.io/required-scc: restricted-v2
+        spec:
+          restartPolicy: Never
+          serviceAccountName: default
+          containers:
+            - name: test
+              image: ${IMAGE}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {memory: 256Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+        YAML
+
+        verdict=FAIL
+        running=0
+        for _ in $(seq 1 180); do   # up to ~3 min, includes the image pull
+          phase=$(oc get pod "$POD" -o jsonpath='{.status.phase}')
+          case "$phase" in
+            Running)   running=$((running + 1)) ;;
+            Succeeded|Failed) break ;;
+          esac
+          if [[ $running -ge $SETTLE ]]; then verdict=PASS; break; fi
+          sleep 1
+        done
+
+        echo "pod phase: $phase (running for ${running}s)"
+        echo "assigned: $(oc get pod "$POD" -o jsonpath='scc={.metadata.annotations.openshift\.io/scc} runAsUser={.spec.containers[0].securityContext.runAsUser}')"
+        echo "--- last log lines ---"
+        oc logs "$POD" --tail=5 2>/dev/null || echo "(no logs)"
+        oc delete pod "$POD" --wait=false >/dev/null
+        echo "verdict: $verdict"
+        printf '%s' "$verdict" > "$(results.verdict.path)"

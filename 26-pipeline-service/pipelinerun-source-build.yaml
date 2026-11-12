@@ -1,0 +1,23 @@
+# pipelinerun-source-build.yaml
+# Purpose: A tenant runs the centrally published source-build pipeline. Nothing
+#          but this PipelineRun (and the workspace PVC) lives in the tenant
+#          namespace. ${GIT_REPO_URL} is filled in with envsubst. Create with "oc create".
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: source-build-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    resolver: cluster
+    params:
+      - {name: kind, value: pipeline}
+      - {name: name, value: source-build}
+      - {name: namespace, value: platform-pipelines}
+  params:
+    - {name: git-url, value: "${GIT_REPO_URL}"}
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pipeline-ws

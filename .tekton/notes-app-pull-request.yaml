@@ -1,0 +1,32 @@
+# notes-app-pull-request.yaml
+# Purpose: Pipelines as Code trigger (Session 2, Step 4). Every pull request to
+#          main that touches app/ builds and scans the image, and reports the
+#          result as a check on the pull request. It never promotes: only
+#          merged code reaches notes-app:latest.
+#          Runs the notes-app-build Pipeline that already exists in the
+#          namespace linked by the Repository resource.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: notes-app-pull-request
+  labels:
+    app.kubernetes.io/part-of: notes-app
+  annotations:
+    pipelinesascode.tekton.dev/on-event: "[pull_request]"
+    pipelinesascode.tekton.dev/on-target-branch: "[main]"
+    pipelinesascode.tekton.dev/on-path-change: "[app/**]"
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+spec:
+  pipelineRef:
+    name: notes-app-build
+  params:
+    - name: git-url
+      value: "{{ repo_url }}"
+    - name: git-revision
+      value: "{{ revision }}"
+    - name: promote
+      value: "false"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pipeline-ws

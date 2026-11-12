@@ -1,0 +1,67 @@
+# deployment.yaml
+# Purpose: Run the vendor image unchanged, as root, inside a pod-level user
+#          namespace. No emptyDir: the root-owned /data in the image is
+#          writable because the process is root in the container. On the node
+#          the same process is an unprivileged UID.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-vendor-userns
+  labels:
+    app.kubernetes.io/name: notes-vendor-userns
+    app.kubernetes.io/part-of: notes-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notes-vendor-userns
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notes-vendor-userns
+        app.kubernetes.io/part-of: notes-app
+      annotations:
+        openshift.io/required-scc: vendor-root-userns
+    spec:
+      serviceAccountName: vendor-root
+      hostUsers: false              # pod-level Linux user namespace
+      containers:
+        - name: notes-vendor
+          image: notes-legacy:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT            # no capabilities, so no port below 1024
+              value: "8080"
+            - name: DATA_DIR
+              value: /data
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: notes-app-token
+                  key: API_TOKEN
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 10

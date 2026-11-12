@@ -1,0 +1,100 @@
+# pipeline.yaml
+# Purpose: Version 2 of the notes-app build pipeline. Same as Step 2, plus an
+#          ACS scan between build and promote: an image with critical CVEs is
+#          pushed (for analysis) but never promoted to notes-app:latest, so it
+#          never reaches the running Deployment.
+#          git-clone and buildah are the Red Hat supported Tasks shipped with
+#          OpenShift Pipelines, resolved from the openshift-pipelines namespace.
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: notes-app-build
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  params:
+    - name: git-url
+      type: string
+    - name: git-revision
+      type: string
+      default: main
+    - name: context
+      type: string
+      description: Build context directory inside the repository
+      default: app
+    - name: containerfile
+      type: string
+      description: Containerfile path inside the repository
+      default: app/Containerfile
+    - name: image-name
+      type: string
+      description: ImageStream in this namespace that receives the image
+      default: notes-app
+    - name: build-args
+      type: array
+      description: Extra build arguments, for example VENDOR_IMAGE=...
+      default: []
+    - name: promote
+      type: string
+      description: '"true" moves <image-name>:latest to the new image'
+      default: "true"
+    - name: fail-on-critical
+      type: string
+      description: '"true" stops the pipeline when the scan finds critical CVEs'
+      default: "true"
+  workspaces:
+    - name: source
+  tasks:
+    - name: clone
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: git-clone}
+          - {name: namespace, value: openshift-pipelines}
+      params:
+        - {name: URL, value: $(params.git-url)}
+        - {name: REVISION, value: $(params.git-revision)}
+      workspaces:
+        - {name: output, workspace: source}
+
+    - name: build
+      runAfter: [clone]
+      taskRef:
+        resolver: cluster
+        params:
+          - {name: kind, value: task}
+          - {name: name, value: buildah}
+          - {name: namespace, value: openshift-pipelines}
+      params:
+        - name: IMAGE
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.image-name):$(tasks.clone.results.COMMIT)
+        - {name: CONTEXT, value: $(params.context)}
+        - {name: DOCKERFILE, value: $(params.containerfile)}
+        - name: BUILD_ARGS
+          value:
+            - APP_VERSION=$(tasks.clone.results.COMMIT)
+            - $(params.build-args[*])
+        - name: BUILD_EXTRA_ARGS
+          value: --label vcs-ref=$(tasks.clone.results.COMMIT) --label vcs-url=$(params.git-url)
+      workspaces:
+        - {name: source, workspace: source}
+
+    - name: scan
+      runAfter: [build]
+      taskRef:
+        name: acs-image-scan
+      params:
+        - name: image
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.image-name)@$(tasks.build.results.IMAGE_DIGEST)
+        - {name: fail-on-critical, value: $(params.fail-on-critical)}
+
+    - name: promote
+      runAfter: [scan]
+      when:
+        - {input: $(params.promote), operator: in, values: ["true"]}
+      taskRef:
+        name: promote-image
+      params:
+        - {name: source, value: "$(params.image-name):$(tasks.clone.results.COMMIT)"}
+        - {name: target, value: "$(params.image-name):latest"}

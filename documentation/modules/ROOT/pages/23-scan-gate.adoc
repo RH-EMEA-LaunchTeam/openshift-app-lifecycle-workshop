@@ -1,0 +1,263 @@
+= Step 3 - Scan Gate: Vulnerable Images Never Reach the Deployment
+include::_attributes.adoc[]
+
+The pipeline from Step 2 promotes any image that builds. This step adds a vulnerability scan between build and promote. The image is still built and pushed, so the security team can analyse it, but an image with *critical* vulnerabilities is never promoted to `notes-app:latest`, and therefore never rolled out.
+
+You will run the pipeline twice: once with the UBI-based `Containerfile` (passes), and once with the legacy Containerfile from Session 1, which uses a Docker Hub base image (blocked).
+
+== Prerequisites
+
+* xref:22-source-pipeline.adoc[Step 2] completed: `notes-app-build` exists and has run at least once
+* The `acs-api` Secret exists in your namespace (created by the platform team)
+
+== How It Works
+
+[source,text]
+----
+ clone  -->  build  -->  scan (ACS)  -- PASS -->  promote  -->  rollout
+                             |
+                             +-- FAIL --> pipeline stops; notes-app:latest unchanged
+----
+
+The `acs-image-scan` Task downloads `roxctl` from ACS Central, so the client always matches the server version, and asks Central to scan the image *by digest*. It authenticates with an API token that has the *Continuous Integration* role. The token comes from the `acs-api` Secret, which the platform team provides to each tenant, so the token never appears in a pipeline definition or in Git.
+
+[cols="2,3",options="header"]
+|===
+| Parameter | Effect
+
+| `fail-on-critical: "true"` (default)
+| Critical CVEs fail the Task, so `promote` never runs
+
+| `fail-on-critical: "false"`
+| The scan reports and records a verdict, but does not stop the pipeline. Used in Step 5, where a separate gate decides.
+|===
+
+== Steps to Apply
+
+[#scan-task]
+=== 1. Look at the scan Task and its credentials
+
+*What:* Check that the `acs-api` Secret exists, without printing its value, and read the scan Task.
+
+*Why:* The security team owns the scanner and its policies. Tenants get a narrowly scoped token, not access to the ACS console.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get secret acs-api -n "$NS" --context {lab-context} -o jsonpath='{.data}' | jq 'keys'
+cat 23-scan-gate/acs-scan-task.yaml
+----
+
+.Verify: Endpoint and token keys exist
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+[
+  "ROX_API_TOKEN",
+  "ROX_ENDPOINT"
+]
+----
+====
+
+'''
+
+[#add-gate]
+=== 2. Add the scan to the pipeline
+
+*What:* Create the scan Task and update `notes-app-build` to version 2, which runs `scan` between `build` and `promote`.
+
+*Why:* The gate sits *before* promotion. The pipeline does not need to know anything about deployments: if `notes-app:latest` does not move, nothing rolls out.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+diff 22-source-pipeline/pipeline.yaml 23-scan-gate/pipeline.yaml
+oc apply -f 23-scan-gate/acs-scan-task.yaml -f 23-scan-gate/pipeline.yaml \
+  -n "$NS" --context {lab-context}
+----
+
+.Verify: The pipeline has four Tasks
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pipeline notes-app-build -n "$NS" --context {lab-context} -o jsonpath='{.spec.tasks[*].name}{"\n"}'
+----
+
+[.console-output]
+[source,bash]
+----
+clone build scan promote
+----
+====
+
+'''
+
+[#run-pass]
+=== 3. Run it on the UBI-based image
+
+icon:clock[] ~3 minutes
+
+*What:* Run the pipeline exactly as in Step 2.
+
+*Why:* The hardened image is built on a Red Hat Universal Base Image, which Red Hat patches and rebuilds regularly. It is expected to pass.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst < 23-scan-gate/pipelinerun.yaml | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+.Verify: Scan passed, image promoted
+[%collapsible]
+====
+In the `scan` Task log:
+
+[.console-output]
+[source,bash]
+----
+[scan : scan] Scanning image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:... for CRITICAL vulnerabilities...
+[scan : scan] verdict: PASS
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun list -n "$NS" --context {lab-context} | head -2
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                    STARTED         DURATION   STATUS
+notes-app-build-p8x2m   3 minutes ago   2m40s      Succeeded
+----
+
+NOTE: A UBI image can occasionally have a critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 6 covers how the monthly patch cycle handles it.
+====
+
+'''
+
+[#run-fail]
+=== 4. Run it on the legacy image
+
+icon:clock[] ~3 minutes
+
+*What:* Run the same pipeline, but build from `app/Containerfile.legacy` (Docker Hub base image).
+
+*Why:* Same code, same pipeline, different base image. This shows the base image is the biggest single source of vulnerabilities, and shows the gate stopping a bad image.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+VERSION_BEFORE=$(curl -sk "https://$ROUTE/api/info" | jq -r .version)
+envsubst < 23-scan-gate/pipelinerun-legacy.yaml | oc create -f - -n "$NS" --context {lab-context}
+tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
+----
+
+.Verify: The scan failed and nothing was promoted
+[%collapsible]
+====
+The `scan` Task prints a table of critical CVEs from the Debian-based image and ends with:
+
+[.console-output]
+[source,bash]
+----
+[scan : scan] verdict: FAIL
+[scan : scan] Critical vulnerabilities found: the image is NOT promoted.
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+tkn pipelinerun list -n "$NS" --context {lab-context} | head -2
+echo "before: $VERSION_BEFORE"
+echo "now:    $(curl -sk "https://$ROUTE/api/info" | jq -r .version)"
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                           STARTED         DURATION   STATUS
+notes-app-build-legacy-t5v7c   3 minutes ago   2m50s      Failed
+before: 3f2c1ab9e8...
+now:    3f2c1ab9e8...
+----
+
+The pipeline failed at `scan`, `promote` was never started, and the running application did not change. The legacy image is still in the registry under its commit tag, so the security team can look at it, but no Deployment uses it.
+====
+
+'''
+
+== What This Solves (Compared to Step 2)
+
+[cols="2,3",options="header"]
+|===
+| Step 2 | Now
+
+| Every image that builds is promoted
+| Images with critical CVEs stop before promotion
+
+| Vulnerabilities found after deployment, if ever
+| Found at build time, with the CVE list in the pipeline log
+
+| The scanner is someone else's tool
+| Every tenant pipeline uses the security team's scanner through a scoped token
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Someone still starts the pipeline by hand
+| xref:24-pipelines-as-code.adoc[Step 4: Pipelines as Code]
+
+| Images we cannot rebuild from source
+| xref:25-vendor-image-intake.adoc[Step 5: Vendor Image Intake]
+
+| CVEs published *after* the image passed the gate
+| Session 6 (monthly patch cycle) and Session 7 (ACS in daily operations)
+
+| The rule "no critical CVEs" is hard-coded in the pipeline
+| Session 7: `roxctl image check` evaluates policies that the security team manages centrally in ACS, so the rule changes without editing any pipeline
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/[Red Hat Advanced Cluster Security for Kubernetes]
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| `roxctl image scan` with a severity threshold (this step)
+| Simple and explicit. The threshold lives in the pipeline.
+
+| `roxctl image check` against ACS policies
+| The production pattern: the security team enables build-time enforcement on policies in ACS, and every pipeline obeys them. Covered in Session 7.
+
+| Admission control (ACS admission controller, or signature verification)
+| Blocks non-compliant images at deploy time, whatever their source. Complements a pipeline gate and does not replace it, because it gives feedback much later.
+|===
+
+'''
+
+== Reset
+
+The pipeline stays at version 2 for the next steps. To go back to version 1:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 22-source-pipeline/pipeline.yaml -n "$NS" --context {lab-context}
+oc delete -f 23-scan-gate/acs-scan-task.yaml -n "$NS" --context {lab-context} --ignore-not-found
+----

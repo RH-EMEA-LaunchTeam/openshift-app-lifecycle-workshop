@@ -1,0 +1,22 @@
+# pipelinerun-legacy.yaml
+# Purpose: Run the same pipeline, but build from the legacy Containerfile
+#          (Docker Hub base). The scan should find critical CVEs and stop the
+#          pipeline before promote. ${GIT_REPO_URL} is filled in with envsubst.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: notes-app-build-legacy-
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  pipelineRef:
+    name: notes-app-build
+  params:
+    - name: git-url
+      value: ${GIT_REPO_URL}
+    - name: containerfile
+      value: app/Containerfile.legacy
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pipeline-ws
