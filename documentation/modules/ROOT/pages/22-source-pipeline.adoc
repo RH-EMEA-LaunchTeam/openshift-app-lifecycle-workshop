@@ -97,7 +97,7 @@ The output lists the parameters with their defaults, the `source` workspace and 
 [#run-pipeline]
 === 3. Run the pipeline
 
-icon:clock[] ~2-3 minutes
+icon:clock[] ~2 minutes
 
 *What:* Start a PipelineRun against the workshop repository and follow its logs.
 
@@ -126,7 +126,7 @@ oc get istag -n "$NS" --context {lab-context} | grep '^notes-app:'
 [source,bash]
 ----
 NAME                    STARTED         DURATION   STATUS
-notes-app-build-4kq9z   3 minutes ago   2m10s      Succeeded
+notes-app-build-4kq9z   2 minutes ago   1m37s      Succeeded
 
 notes-app:3f2c1ab9e8...   image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:9b1e...   1 minute ago
 notes-app:latest          image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:9b1e...   1 minute ago

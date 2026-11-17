@@ -21,6 +21,16 @@ spec:
   results:
     - name: verdict
       description: PASS or FAIL
+  stepTemplate:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    env:
+      - name: HOME          # non-root users have no home directory in these images
+        value: /tekton/home
   steps:
     - name: run
       image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest

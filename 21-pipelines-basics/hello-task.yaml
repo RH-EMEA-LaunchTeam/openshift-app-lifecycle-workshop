@@ -1,7 +1,7 @@
 # hello-task.yaml
 # Purpose: The smallest useful Task. Two steps run as two containers in one pod,
-#          share a scratch directory, and run with the namespace's random UID,
-#          like any other workload on the platform.
+#          and share a scratch directory. The stepTemplate makes every step
+#          run as a non-root user, which our own Tasks always declare.
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
@@ -14,18 +14,28 @@ spec:
       type: string
       description: Name of the team running the task
       default: platform
+  stepTemplate:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    env:
+      - name: HOME          # non-root users have no home directory in these images
+        value: /tekton/home
   steps:
     - name: who-am-i
       image: registry.access.redhat.com/ubi9/ubi-minimal:latest
       script: |
         #!/usr/bin/env bash
         echo "Hello, $(params.team) team"
-        echo "pod:  $(hostname)"
+        echo "pod:  ${HOSTNAME}"
         echo "user: $(id)"
         echo "step 1 was here" > /workspace/scratch.txt
     - name: read-scratch
       image: registry.access.redhat.com/ubi9/ubi-minimal:latest
       script: |
         #!/usr/bin/env bash
-        echo "pod:  $(hostname)"
+        echo "pod:  ${HOSTNAME}"
         echo "file from the previous step: $(cat /workspace/scratch.txt)"

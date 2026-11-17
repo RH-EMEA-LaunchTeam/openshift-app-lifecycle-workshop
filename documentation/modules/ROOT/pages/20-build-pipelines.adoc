@@ -72,7 +72,7 @@ This session runs on a fresh cluster that several participants share. Each parti
 | Used in xref:26-pipeline-service.adoc[Step 6]
 |===
 
-NOTE: To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cluster-admin. Its header explains the arguments.
+NOTE: To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cluster-admin, *at least one hour before the session*. Its header explains the arguments. Most of the time goes into the first download of the ACS vulnerability database (about 40 minutes on a fresh cluster); the script waits until a real scan succeeds.
 
 === 1. Complete the setup page
 
@@ -96,8 +96,10 @@ tkn version --component client
 ----
 user1
 project.project.openshift.io/app-lifecycle-user1
-Client version: 0.4x.x
+Client version: 0.46.2
 ----
+
+Any recent `tkn` works.
 
 If `tkn` is missing, use the OpenShift *Web Terminal*, which includes it.
 ====
@@ -107,11 +109,11 @@ If `tkn` is missing, use the OpenShift *Web Terminal*, which includes it.
 [#catch-up]
 === 2. Catch up to the end of Session 1
 
-icon:clock[] ~3 minutes
+icon:clock[] ~2 minutes
 
 *What:* Run the catch-up script. It builds both images and deploys `notes-app` in the state it had at the end of xref:15-stateless-and-scale.adoc[Session 1, Step 5].
 
-*Why:* This is a new cluster, so nothing from Session 1 exists yet. The script needs only admin rights on your namespace.
+*Why:* This is a new cluster, so nothing from Session 1 exists yet. The script needs only admin rights on your namespace. The platform team has already put the legacy image into your namespace, so only the hardened image is built.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -128,7 +130,7 @@ export ROUTE=$(oc get route notes-app -n "$NS" --context {lab-context} -o jsonpa
 echo "export ROUTE=$ROUTE" >> myenv.sh
 ----
 
-NOTE: The legacy image pulls its base from Docker Hub. If the script stops with `toomanyrequests`, wait a few minutes and run it again. It is safe to re-run.
+NOTE: The script is safe to re-run. If the legacy image was not provided by the platform team, the script builds it too, pulling its base from Docker Hub. If that stops with `toomanyrequests`, wait a few minutes and run it again.
 
 .Verify: notes-app answers with version 1.0
 [%collapsible]
@@ -147,9 +149,9 @@ oc get istag -n "$NS" --context {lab-context}
   "version": "1.0",
   "storage": "postgresql"
 }
-NAME                  IMAGE REFERENCE                                   UPDATED
-notes-app:latest      image-registry.openshift-image-registry.svc:5000/...   1 minute ago
-notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/...   1 minute ago
+NAME                  IMAGE REFERENCE                                                                       UPDATED
+notes-app:latest      image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-app@sha256:...      About a minute ago
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy@sha256:...   3 minutes ago
 ----
 
 Version `1.0` comes from the hand-started build. After Step 2 the version is a Git commit.

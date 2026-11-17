@@ -3,6 +3,9 @@
 #          cluster. Applied by the instructor after the ACS operator is installed.
 #          The admin password Secret (central-admin-pass) is created by
 #          platform-setup.sh with "oc create secret", never stored in Git.
+#          Sized for a small workshop cluster: the default requests (several
+#          CPUs for the database alone) do not fit next to the tenants.
+#          Scanner V4 does the scanning; the older StackRox Scanner is disabled.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -24,3 +27,28 @@ spec:
     exposure:
       route:
         enabled: true
+    resources:
+      requests: {cpu: 500m, memory: 2Gi}
+      limits: {memory: 8Gi}
+    db:
+      resources:
+        requests: {cpu: 500m, memory: 2Gi}
+        limits: {memory: 8Gi}
+  scanner:
+    scannerComponent: Disabled
+  scannerV4:
+    scannerComponent: Enabled
+    indexer:
+      scaling: {autoScaling: Disabled, replicas: 1}
+      resources:
+        requests: {cpu: 500m, memory: 1500Mi}
+        limits: {memory: 4Gi}
+    matcher:
+      scaling: {autoScaling: Disabled, replicas: 1}
+      resources:
+        requests: {cpu: 500m, memory: 2Gi}
+        limits: {memory: 6Gi}
+    db:
+      resources:
+        requests: {cpu: 200m, memory: 1Gi}
+        limits: {memory: 4Gi}

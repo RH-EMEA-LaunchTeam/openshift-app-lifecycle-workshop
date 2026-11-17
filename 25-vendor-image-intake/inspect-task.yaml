@@ -21,6 +21,15 @@ spec:
     - name: scratch
       emptyDir: {}
   stepTemplate:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    env:
+      - name: HOME          # non-root users have no home directory in these images
+        value: /tekton/home
     volumeMounts:
       - name: scratch
         mountPath: /scratch

@@ -1,6 +1,7 @@
 # acs-scan-task.yaml
-# Purpose: Scan an image with Red Hat Advanced Cluster Security (ACS) and report
-#          critical vulnerabilities. Downloads roxctl from Central, so the CLI
+# Purpose: Scan an image with Red Hat Advanced Cluster Security (ACS). Critical
+#          vulnerabilities that have a fix fail the scan; critical ones without
+#          a fix yet are reported, because rebuilding cannot remove them. Downloads roxctl from Central, so the CLI
 #          always matches the Central version. Reads the endpoint and an API
 #          token (Continuous Integration role) from the acs-api Secret, which the
 #          platform team creates in every tenant namespace.
@@ -17,14 +18,24 @@ spec:
       description: Full image reference, preferably by digest
     - name: fail-on-critical
       type: string
-      description: '"true" fails the task when critical CVEs are found'
+      description: '"true" fails the task when fixable critical CVEs are found'
       default: "true"
   results:
     - name: verdict
-      description: PASS (no critical CVEs) or FAIL (critical CVEs found)
+      description: PASS (no fixable critical CVEs) or FAIL (fixable critical CVEs found)
+  stepTemplate:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    env:
+      - name: HOME          # non-root users have no home directory in these images
+        value: /tekton/home
   steps:
     - name: scan
-      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      image: registry.access.redhat.com/ubi9/python-312:latest
       envFrom:
         - secretRef:
             name: acs-api
@@ -34,32 +45,48 @@ spec:
         - name: FAIL_ON_CRITICAL
           value: $(params.fail-on-critical)
       script: |
-        #!/usr/bin/env bash
-        set -uo pipefail
-        curl -sfk -H "Authorization: Bearer $ROX_API_TOKEN" \
-          "https://$ROX_ENDPOINT/api/cli/download/roxctl-linux" -o /tmp/roxctl \
-          || { echo "ERROR: cannot download roxctl from $ROX_ENDPOINT"; exit 1; }
-        chmod +x /tmp/roxctl
+        #!/usr/bin/env python3
+        import json, os, platform, ssl, subprocess, sys, urllib.request
 
-        echo "Scanning $IMAGE for CRITICAL vulnerabilities..."
-        out=$(/tmp/roxctl image scan --image "$IMAGE" -e "$ROX_ENDPOINT" \
-                --insecure-skip-tls-verify --force \
-                --severity CRITICAL --output table --fail 2>&1)
-        rc=$?
-        echo "$out"
+        endpoint, token, image = os.environ["ROX_ENDPOINT"], os.environ["ROX_API_TOKEN"], os.environ["IMAGE"]
+        ctx = ssl._create_unverified_context()   # demo cluster: Central uses a self-signed certificate
+        arch = {"x86_64": "amd64", "aarch64": "arm64"}.get(platform.machine(), platform.machine())
+        # ACS 4.x+ serves roxctl-linux-<arch>; older releases only roxctl-linux
+        for name in (f"roxctl-linux-{arch}", "roxctl-linux"):
+            req = urllib.request.Request(f"https://{endpoint}/api/cli/download/{name}",
+                                         headers={"Authorization": f"Bearer {token}"})
+            try:
+                open("/tmp/roxctl", "wb").write(urllib.request.urlopen(req, context=ctx).read())
+                break
+            except Exception:
+                continue
+        else:
+            sys.exit(f"ERROR: cannot download roxctl from {endpoint}")
+        os.chmod("/tmp/roxctl", 0o755)
 
-        if [[ $rc -eq 0 ]]; then
-          verdict=PASS
-        elif grep -q 'CVE-' <<<"$out"; then
-          verdict=FAIL
-        else
-          echo "ERROR: the scan itself failed (exit code $rc), see the output above"
-          exit 1
-        fi
-        printf '%s' "$verdict" > "$(results.verdict.path)"
-        echo "verdict: $verdict"
+        print(f"Scanning {image} for CRITICAL vulnerabilities...")
+        run = subprocess.run(["/tmp/roxctl", "image", "scan", "--image", image, "-e", endpoint,
+                              "--insecure-skip-tls-verify", "--force", "--output", "json"],
+                             capture_output=True, text=True)
+        if run.returncode != 0:
+            print(run.stdout, run.stderr)
+            sys.exit(f"ERROR: the scan itself failed (exit code {run.returncode}), see the output above")
 
-        if [[ "$verdict" == FAIL && "$FAIL_ON_CRITICAL" == "true" ]]; then
-          echo "Critical vulnerabilities found: the image is NOT promoted."
-          exit 1
-        fi
+        critical = {}
+        for v in json.loads(run.stdout).get("result", {}).get("vulnerabilities", []):
+            if v.get("cveSeverity", "").upper() == "CRITICAL":
+                key = (v["cveId"], v.get("componentName", "?"))
+                critical[key] = v.get("componentFixedVersion") or ""
+        fixable = {k: f for k, f in critical.items() if f}
+        unfixed = {k: f for k, f in critical.items() if not f}
+        for (cve, comp), fix in sorted(fixable.items()):
+            print(f"  FIXABLE  {cve:18} {comp:28} fixed in {fix}")
+        for (cve, comp), _ in sorted(unfixed.items()):
+            print(f"  NO FIX   {cve:18} {comp:28} (reported, does not block)")
+        print(f"critical CVEs: {len(fixable)} fixable, {len(unfixed)} without a fix yet")
+
+        verdict = "FAIL" if fixable else "PASS"
+        open("$(results.verdict.path)", "w").write(verdict)
+        print(f"verdict: {verdict}")
+        if verdict == "FAIL" and os.environ["FAIL_ON_CRITICAL"] == "true":
+            sys.exit("Fixable critical vulnerabilities found: the image is NOT promoted.")

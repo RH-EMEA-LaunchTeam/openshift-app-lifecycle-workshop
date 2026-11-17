@@ -85,7 +85,7 @@ notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifec
 [#run-intake]
 === 2. Run the intake pipeline on the image as delivered
 
-icon:clock[] ~2 minutes
+icon:clock[] ~1 minute
 
 *What:* Create the three check Tasks, the gate and the `vendor-intake` Pipeline, then run it on `notes-legacy:latest`.
 
@@ -131,6 +131,17 @@ The `uid-test` Task:
 
 The `gate` Task:
 
+The `scan` Task:
+
+[.console-output]
+[source,bash]
+----
+[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
+[scan : scan] verdict: FAIL
+----
+
+The `gate` Task:
+
 [.console-output]
 [source,bash]
 ----
@@ -141,7 +152,7 @@ The `gate` Task:
 [gate : decide] INTAKE REJECTED: the image is not promoted.
 ----
 
-These are the same three findings you made by hand in Session 1, now in two minutes and with no source code.
+These are the same three findings you made by hand in Session 1, now in under a minute and with no source code.
 ====
 
 '''
@@ -189,7 +200,7 @@ This works, but each team that deploys the image has to know and repeat these fi
 [#level-2]
 === 4. Level 2: re-layer the vendor image
 
-icon:clock[] ~5 minutes (one build, two intake runs)
+icon:clock[] ~4 minutes (one 2-minute build, two 40-second intake runs)
 
 *What:* Build a thin layer on top of the unchanged vendor image with the existing build pipeline, then run intake on the result. Run it once without, and once with, a risk acceptance for the vendor's CVEs.
 
@@ -213,7 +224,7 @@ ACCEPT_CVES=false envsubst < 25-vendor-image-intake/pipelinerun-intake-relayered
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
-Only the CVEs remain. You cannot fix them without the vendor, so record a time-limited risk acceptance and run intake again:
+Only the CVEs remain. The fixable ones are in the vendor's layers, and you cannot rebuild those, so record a time-limited risk acceptance and run intake again:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -252,9 +263,11 @@ oc get imagestream notes-vendor -n "$NS" --context {lab-context} \
 [source,bash]
 ----
 NAME                    IMAGE REFERENCE                                                                         UPDATED
-notes-vendor:approved   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy-relayered@sha256:...   10 seconds ago
+notes-vendor:approved   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-vendor@sha256:...   1 second ago
 critical CVEs accepted at intake on 2026-11-18; review at next vendor release
 ----
+
+The approved tag points to exactly the digest that passed intake.
 ====
 
 WARNING: Clearing `API_TOKEN` in the new layer removes it from the container's environment, but not from the image history: `oc image info` on the re-layered image still shows the old value in the layer that set it. A credential that was ever in an image must be treated as leaked and rotated by the vendor.
@@ -305,11 +318,11 @@ oc exec deploy/notes-vendor-userns -n "$NS" --context {lab-context} -- ls -ld /d
 [source,bash]
 ----
 uid=0(root) gid=0(root) groups=0(root)
-         0 2147483648      65536
-drwxr-xr-x. 1 root root 24 Nov 18 09:41 /data
+         0   56164352      65536
+drwxr-xr-x. 1 root root 23 Nov 18 09:41 /data
 ----
 
-`uid_map` reads: UID 0 in the container is UID 2147483648 on the node, for a range of 65536 IDs. The exact host number varies per pod. The process writes to the root-owned `/data` in the image without an `emptyDir`, and the node sees an unprivileged user.
+`uid_map` reads: UID 0 in the container is UID 56164352 on the node, for a range of 65536 IDs. The exact host number varies per pod. The process writes to the root-owned `/data` in the image without an `emptyDir`, and the node sees an unprivileged user.
 
 The exception is still an exception: it is granted to one ServiceAccount in one namespace, and other pods in the namespace keep running under `restricted-v2`.
 ====
@@ -423,6 +436,9 @@ oc delete -f 25-vendor-image-intake/userns/deployment.yaml -f 25-vendor-image-in
 oc delete -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context} --ignore-not-found
 oc delete pipelinerun -l tekton.dev/pipeline=vendor-intake -n "$NS" --context {lab-context} --ignore-not-found
 oc delete imagestream notes-vendor notes-legacy-relayered -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 25-vendor-image-intake/pipeline.yaml -f 25-vendor-image-intake/gate-task.yaml \
+  -f 25-vendor-image-intake/uid-test-task.yaml -f 25-vendor-image-intake/inspect-task.yaml \
+  -n "$NS" --context {lab-context} --ignore-not-found
 ----
 
 Cluster-admin only, when no namespace uses it any more:

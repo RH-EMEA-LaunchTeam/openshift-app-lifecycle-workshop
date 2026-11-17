@@ -1,7 +1,7 @@
 = Step 1 - Pipelines Basics: Tasks, Runs and the Supported Catalogue
 include::_attributes.adoc[]
 
-Before building anything real, this step shows the four objects you will use for the rest of the session and how they map to things you already know: pods and containers. A pipeline on OpenShift is ordinary workloads in your namespace. It runs under the same quota, the same security rules and the same random UID as your application.
+Before building anything real, this step shows the four objects you will use for the rest of the session and how they map to things you already know: pods and containers. A pipeline on OpenShift is ordinary workloads in your namespace. It runs under the same quota and LimitRange as your application, with one security difference that this step makes visible.
 
 == Prerequisites
 
@@ -63,9 +63,11 @@ tkn task list -n openshift-pipelines --context {lab-context} | grep -E '^(git-cl
 [.console-output]
 [source,bash]
 ----
-git-clone   Clone a repository from a git remote ...
-buildah     Build and push container images with Buildah ...
+buildah
+git-clone                   This object represe...   5 minutes ago
 ----
+
+The catalogue also contains versioned copies such as `buildah-1-24-0`, so a pipeline can pin a specific release of a Task.
 
 To see a Task's parameters, results and workspaces:
 
@@ -104,7 +106,7 @@ NOTE: Run objects use `generateName`, so every run gets a unique name. That is w
 ----
 [who-am-i] Hello, notes-app team
 [who-am-i] pod:  hello-platform-x7k2p-pod
-[who-am-i] user: uid=1000690000(1000690000) gid=0(root) groups=0(root),1000690000
+[who-am-i] user: uid=1001(1001) gid=0(root) groups=0(root),1000890000
 
 [read-scratch] pod:  hello-platform-x7k2p-pod
 [read-scratch] file from the previous step: step 1 was here
@@ -131,7 +133,7 @@ hello-platform-x7k2p   30 seconds ago   9s         Succeeded
 
 *What:* Find the pod behind the TaskRun and list its containers.
 
-*Why:* When a pipeline fails, you debug a pod. Everything from Session 1 still applies: random UID in group 0, `restricted`-style SCC, quota and LimitRange defaults.
+*Why:* When a pipeline fails, you debug a pod. Most of Session 1 still applies (quota, LimitRange defaults, no privileged containers), with one difference in how the user ID is chosen.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -148,12 +150,18 @@ oc get pod -l tekton.dev/taskRun="$TR" -n "$NS" --context {lab-context} \
 [.console-output]
 [source,bash]
 ----
-restricted-v2
+pipelines-scc
 step-who-am-i
 step-read-scratch
 ----
 
-The two steps were two containers in one pod, which is why the second step could read the file the first one wrote. You may see `pipelines-scc` instead of `restricted-v2`: it is `restricted-v2` plus the one capability Buildah needs to build images without root, and the pipeline service account is allowed to use it. Either way, the pod never runs as root.
+The two steps were two containers in one pod, which is why the second step could read the file the first one wrote.
+
+The pod was admitted with `pipelines-scc`, not `restricted-v2`. It is `restricted-v2` plus one capability (`SETFCAP`), still with no privileged mode and no privilege escalation, but with one important difference: *the step keeps the user its image declares*, instead of getting a random UID from the namespace range. Buildah needs this to build images. The consequence is that a step whose image has no `USER` instruction runs as UID 0 inside its container.
+
+That is why every Task in this workshop declares a non-root user in its `stepTemplate` (`runAsNonRoot: true`, `runAsUser: 1001`), and the output above shows `uid=1001`. Only the Red Hat supported `buildah` step runs as root. Look at the `stepTemplate` in `21-pipelines-basics/hello-task.yaml`: make it a rule for every Task your teams write.
+
+TIP: Platform teams that want stricter defaults can set `restricted-v2` as the default SCC for pipelines in the `TektonConfig` resource, and allow `pipelines-scc` only in namespaces that build images.
 ====
 
 '''

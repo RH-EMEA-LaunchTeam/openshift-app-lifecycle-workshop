@@ -15,14 +15,20 @@ ocx() { oc --context "$CTX" -n "$NS" "$@"; }
 
 [[ -d app && -d 15-stateless-and-scale ]] || { echo "Run from the repository root"; exit 1; }
 
-echo "==> Building both images from app/ (legacy ~60s, hardened ~50s, in parallel)"
 ocx apply -f 11-legacy-app/build.yaml -f 12-image-hygiene/build.yaml >/dev/null
-ocx start-build notes-legacy --from-dir=app --wait >/dev/null &
-legacy=$!
-ocx start-build notes-app --from-dir=app --wait >/dev/null &
-hardened=$!
-wait "$legacy" || { echo "legacy build failed: oc logs bc/notes-legacy -n $NS --context $CTX"; exit 1; }
-wait "$hardened" || { echo "hardened build failed: oc logs bc/notes-app -n $NS --context $CTX"; exit 1; }
+if ocx get istag notes-legacy:latest >/dev/null 2>&1; then
+  echo "==> Legacy image already provided by the platform team, building notes-app only (~50s)"
+  ocx start-build notes-app --from-dir=app --wait >/dev/null \
+    || { echo "build failed: oc logs bc/notes-app -n $NS --context $CTX"; exit 1; }
+else
+  echo "==> Building both images from app/ (legacy ~60s, hardened ~50s, in parallel)"
+  ocx start-build notes-legacy --from-dir=app --wait >/dev/null &
+  legacy=$!
+  ocx start-build notes-app --from-dir=app --wait >/dev/null &
+  hardened=$!
+  wait "$legacy" || { echo "legacy build failed: oc logs bc/notes-legacy -n $NS --context $CTX"; exit 1; }
+  wait "$hardened" || { echo "hardened build failed: oc logs bc/notes-app -n $NS --context $CTX"; exit 1; }
+fi
 
 echo "==> Creating Secrets (skipped if they already exist)"
 ocx get secret notes-app-token >/dev/null 2>&1 || \

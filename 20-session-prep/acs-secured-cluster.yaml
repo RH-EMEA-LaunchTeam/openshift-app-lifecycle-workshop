@@ -12,3 +12,9 @@ metadata:
 spec:
   clusterName: lab
   centralEndpoint: central.stackrox.svc:443
+  sensor:
+    resources:
+      requests: {cpu: 250m, memory: 1Gi}
+      limits: {memory: 4Gi}
+  admissionControl:
+    replicas: 1

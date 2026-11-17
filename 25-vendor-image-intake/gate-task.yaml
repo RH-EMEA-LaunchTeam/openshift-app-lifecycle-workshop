@@ -19,6 +19,16 @@ spec:
   results:
     - name: note
       description: Exception text to record on the approved image, or "none"
+  stepTemplate:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    env:
+      - name: HOME          # non-root users have no home directory in these images
+        value: /tekton/home
   steps:
     - name: decide
       image: registry.access.redhat.com/ubi9/ubi-minimal:latest

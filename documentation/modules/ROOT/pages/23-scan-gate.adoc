@@ -1,7 +1,9 @@
 = Step 3 - Scan Gate: Vulnerable Images Never Reach the Deployment
 include::_attributes.adoc[]
 
-The pipeline from Step 2 promotes any image that builds. This step adds a vulnerability scan between build and promote. The image is still built and pushed, so the security team can analyse it, but an image with *critical* vulnerabilities is never promoted to `notes-app:latest`, and therefore never rolled out.
+The pipeline from Step 2 promotes any image that builds. This step adds a vulnerability scan between build and promote. The image is still built and pushed, so the security team can analyse it, but an image with *fixable critical* vulnerabilities is never promoted to `notes-app:latest`, and therefore never rolled out.
+
+Critical vulnerabilities that do not have a fix yet are reported but do not block. Rebuilding cannot remove them, so blocking on them would stop every build of every team until the vendor of the base image ships a fix. Deciding what to do about them is a risk decision for the security owner, not a build failure. This is also how the default ACS policies treat severity.
 
 You will run the pipeline twice: once with the UBI-based `Containerfile` (passes), and once with the legacy Containerfile from Session 1, which uses a Docker Hub base image (blocked).
 
@@ -19,14 +21,14 @@ You will run the pipeline twice: once with the UBI-based `Containerfile` (passes
                              +-- FAIL --> pipeline stops; notes-app:latest unchanged
 ----
 
-The `acs-image-scan` Task downloads `roxctl` from ACS Central, so the client always matches the server version, and asks Central to scan the image *by digest*. It authenticates with an API token that has the *Continuous Integration* role. The token comes from the `acs-api` Secret, which the platform team provides to each tenant, so the token never appears in a pipeline definition or in Git.
+The `acs-image-scan` Task downloads `roxctl` from ACS Central, so the client always matches the server version, asks Central to scan the image *by digest*, and splits the critical CVEs into *fixable* and *no fix yet*. It authenticates with an API token that has the *Continuous Integration* role. The token comes from the `acs-api` Secret, which the platform team provides to each tenant, so the token never appears in a pipeline definition or in Git.
 
 [cols="2,3",options="header"]
 |===
 | Parameter | Effect
 
 | `fail-on-critical: "true"` (default)
-| Critical CVEs fail the Task, so `promote` never runs
+| Fixable critical CVEs fail the Task, so `promote` never runs
 
 | `fail-on-critical: "false"`
 | The scan reports and records a verdict, but does not stop the pipeline. Used in Step 5, where a separate gate decides.
@@ -99,11 +101,11 @@ clone build scan promote
 [#run-pass]
 === 3. Run it on the UBI-based image
 
-icon:clock[] ~3 minutes
+icon:clock[] ~2 minutes
 
 *What:* Run the pipeline exactly as in Step 2.
 
-*Why:* The hardened image is built on a Red Hat Universal Base Image, which Red Hat patches and rebuilds regularly. It is expected to pass.
+*Why:* The hardened image is built on a Red Hat Universal Base Image, which Red Hat patches and rebuilds regularly. It is expected to pass, although it may report a critical CVE for which no fix has been published yet.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -121,8 +123,13 @@ In the `scan` Task log:
 [source,bash]
 ----
 [scan : scan] Scanning image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:... for CRITICAL vulnerabilities...
+[scan : scan]   NO FIX   CVE-2026-114406    ca-certificates              (reported, does not block)
+[scan : scan] critical CVEs: 0 fixable, 1 without a fix yet
 [scan : scan] verdict: PASS
+[promote : tag] promoted notes-app:92e70520... -> notes-app:latest (sha256:...)
 ----
+
+The exact CVEs change from day to day as new ones are published and fixed.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -134,10 +141,10 @@ tkn pipelinerun list -n "$NS" --context {lab-context} | head -2
 [source,bash]
 ----
 NAME                    STARTED         DURATION   STATUS
-notes-app-build-p8x2m   3 minutes ago   2m40s      Succeeded
+notes-app-build-p8x2m   2 minutes ago   1m41s      Succeeded
 ----
 
-NOTE: A UBI image can occasionally have a critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 6 covers how the monthly patch cycle handles it.
+NOTE: A UBI image can occasionally have a *fixable* critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 6 covers how the monthly patch cycle handles it.
 ====
 
 '''
@@ -145,7 +152,7 @@ NOTE: A UBI image can occasionally have a critical CVE for a few days, between t
 [#run-fail]
 === 4. Run it on the legacy image
 
-icon:clock[] ~3 minutes
+icon:clock[] ~2-3 minutes
 
 *What:* Run the same pipeline, but build from `app/Containerfile.legacy` (Docker Hub base image).
 
@@ -162,14 +169,20 @@ tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 .Verify: The scan failed and nothing was promoted
 [%collapsible]
 ====
-The `scan` Task prints a table of critical CVEs from the Debian-based image and ends with:
+The `scan` Task lists the critical CVEs of the Debian-based image and ends with:
 
 [.console-output]
 [source,bash]
 ----
+[scan : scan]   FIXABLE  CVE-2026-42216     libopenexr-3-1-30            fixed in 3.2.12-1~deb13u1
+[scan : scan]   ...
+[scan : scan]   NO FIX   CVE-2026-6653      libxml2                      (reported, does not block)
+[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
 [scan : scan] verdict: FAIL
-[scan : scan] Critical vulnerabilities found: the image is NOT promoted.
+[scan : scan] Fixable critical vulnerabilities found: the image is NOT promoted.
 ----
+
+Same code, same pipeline: the Debian-based image has 15 critical findings against 1 for UBI, and 4 of them would disappear with a simple rebuild on a patched base.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -183,7 +196,7 @@ echo "now:    $(curl -sk "https://$ROUTE/api/info" | jq -r .version)"
 [source,bash]
 ----
 NAME                           STARTED         DURATION   STATUS
-notes-app-build-legacy-t5v7c   3 minutes ago   2m50s      Failed
+notes-app-build-legacy-t5v7c   2 minutes ago   2m28s      Failed
 before: 3f2c1ab9e8...
 now:    3f2c1ab9e8...
 ----
@@ -200,7 +213,7 @@ The pipeline failed at `scan`, `promote` was never started, and the running appl
 | Step 2 | Now
 
 | Every image that builds is promoted
-| Images with critical CVEs stop before promotion
+| Images with fixable critical CVEs stop before promotion; unfixed ones are reported
 
 | Vulnerabilities found after deployment, if ever
 | Found at build time, with the CVE list in the pipeline log
@@ -224,7 +237,7 @@ The pipeline failed at `scan`, `promote` was never started, and the running appl
 | CVEs published *after* the image passed the gate
 | Session 6 (monthly patch cycle) and Session 7 (ACS in daily operations)
 
-| The rule "no critical CVEs" is hard-coded in the pipeline
+| The rule "no fixable critical CVEs" is hard-coded in the pipeline
 | Session 7: `roxctl image check` evaluates policies that the security team manages centrally in ACS, so the rule changes without editing any pipeline
 |===
 
@@ -239,8 +252,11 @@ The pipeline failed at `scan`, `promote` was never started, and the running appl
 |===
 | Approach | Notes
 
-| `roxctl image scan` with a severity threshold (this step)
+| `roxctl image scan` with a severity and fixability threshold (this step)
 | Simple and explicit. The threshold lives in the pipeline.
+
+| Block on every critical CVE, fixed or not
+| Strictest, but blocks builds for vulnerabilities nobody can fix yet, which pushes teams to bypass the gate.
 
 | `roxctl image check` against ACS policies
 | The production pattern: the security team enables build-time enforcement on policies in ACS, and every pipeline obeys them. Covered in Session 7.

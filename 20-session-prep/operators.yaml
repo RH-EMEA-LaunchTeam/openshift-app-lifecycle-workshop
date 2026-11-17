@@ -1,7 +1,7 @@
 # operators.yaml
 # Purpose: Platform-side prerequisites for Session 2, applied once per cluster by
-#          the instructor (cluster-admin): the OpenShift Pipelines operator and the
-#          Red Hat Advanced Cluster Security (ACS) operator.
+#          the instructor (cluster-admin): the OpenShift Pipelines, Red Hat
+#          Advanced Cluster Security (ACS) and Web Terminal operators.
 #          Participants never apply this file.
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -42,5 +42,20 @@ metadata:
 spec:
   channel: stable
   name: rhacs-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+---
+# Web Terminal: a browser shell with oc, tkn, git and jq for participants who
+# cannot install tools on their workstation. Pulls in the DevWorkspace operator.
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: web-terminal
+  namespace: openshift-operators
+  labels:
+    app.kubernetes.io/part-of: notes-app
+spec:
+  channel: fast
+  name: web-terminal
   source: redhat-operators
   sourceNamespace: openshift-marketplace

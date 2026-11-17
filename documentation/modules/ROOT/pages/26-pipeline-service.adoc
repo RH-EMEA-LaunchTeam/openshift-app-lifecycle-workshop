@@ -150,8 +150,8 @@ tkn pipelinerun list -n "$NS" --context {lab-context} | head -3
 [source,bash]
 ----
 NAME                          STARTED          DURATION   STATUS
-vendor-intake-central-q2w9d   1 minute ago     1m20s      Succeeded
-source-build-h7f3k            4 minutes ago    2m45s      Succeeded
+vendor-intake-central-q2w9d   42 seconds ago   40s        Succeeded
+source-build-h7f3k            2 minutes ago    1m31s      Succeeded
 ----
 
 The runs, their pods and their logs are in *your* namespace. Nothing ran in `platform-pipelines`.
@@ -187,9 +187,12 @@ tkn pipelinerun list -n "$NS" --context {lab-context} | wc -l
 [.console-output]
 [source,bash]
 ----
-No resources found in app-lifecycle-user1 namespace.
-12
+NAME                             AGE
+task.tekton.dev/hello-platform   49m
+15
 ----
+
+Only the `hello-platform` Task from Step 1 is left (remove it with the Step 1 reset). The second number counts your pipeline runs, plus a header line.
 
 NOTE: If you completed xref:24-pipelines-as-code.adoc[Step 4], its `.tekton/` files reference `notes-app-build` by name. To keep it working, change their `pipelineRef` to the cluster resolver block from `26-pipeline-service/pipelinerun-source-build.yaml`.
 ====
