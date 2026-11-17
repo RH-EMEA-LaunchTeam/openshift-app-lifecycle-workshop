@@ -50,6 +50,11 @@ ocx apply -f 12-image-hygiene/service.yaml -f 12-image-hygiene/route.yaml \
 ocx rollout status deploy/notes-app --timeout=180s >/dev/null
 
 route=$(ocx get route notes-app -o jsonpath='{.spec.host}')
+# A new route takes a few seconds before the router serves it
+for _ in $(seq 1 30); do
+  curl -sfk "https://$route/api/info" >/dev/null 2>&1 && break
+  sleep 2
+done
 echo
 echo "Session 1 state ready. Version currently running:"
 curl -sk "https://$route/api/info"
