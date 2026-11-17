@@ -366,7 +366,7 @@
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Before building anything real, this step shows the four objects you will use for the rest of the session and how they map to things you already know: pods and containers. A pipeline on OpenShift is ordinary workloads in your namespace. It runs under the same quota, the same security rules and the same random UID as your application.</p>
+<p>Before building anything real, this step shows the four objects you will use for the rest of the session and how they map to things you already know: pods and containers. A pipeline on OpenShift is ordinary workloads in your namespace. It runs under the same quota and LimitRange as your application, with one security difference that this step makes visible.</p>
 </div>
 </div>
 </div>
@@ -459,9 +459,12 @@ tkn task list -n openshift-pipelines --context lab</code></pre>
 </div>
 <div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git-clone   Clone a repository from a git remote ...
-buildah     Build and push container images with Buildah ...</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">buildah
+git-clone                   This object represe...   5 minutes ago</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The catalogue also contains versioned copies such as <code>buildah-1-24-0</code>, so a pipeline can pin a specific release of a Task.</p>
 </div>
 <div class="paragraph">
 <p>To see a Task&#8217;s parameters, results and workspaces:</p>
@@ -510,7 +513,7 @@ Run objects use <code>generateName</code>, so every run gets a unique name. That
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[who-am-i] Hello, notes-app team
 [who-am-i] pod:  hello-platform-x7k2p-pod
-[who-am-i] user: uid=1000690000(1000690000) gid=0(root) groups=0(root),1000690000
+[who-am-i] user: uid=1001(1001) gid=0(root) groups=0(root),1000890000
 
 [read-scratch] pod:  hello-platform-x7k2p-pod
 [read-scratch] file from the previous step: step 1 was here</code></pre>
@@ -537,7 +540,7 @@ hello-platform-x7k2p   30 seconds ago   9s         Succeeded</code></pre>
 <p><strong>What:</strong> Find the pod behind the TaskRun and list its containers.</p>
 </div>
 <div class="paragraph">
-<p><strong>Why:</strong> When a pipeline fails, you debug a pod. Everything from Session 1 still applies: random UID in group 0, <code>restricted</code>-style SCC, quota and LimitRange defaults.</p>
+<p><strong>Why:</strong> When a pipeline fails, you debug a pod. Most of Session 1 still applies (quota, LimitRange defaults, no privileged containers), with one difference in how the user ID is chosen.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -552,13 +555,31 @@ oc get pod -l tekton.dev/taskRun="$TR" -n "$NS" --context lab \
 <div class="content">
 <div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restricted-v2
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">pipelines-scc
 step-who-am-i
 step-read-scratch</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The two steps were two containers in one pod, which is why the second step could read the file the first one wrote. You may see <code>pipelines-scc</code> instead of <code>restricted-v2</code>: it is <code>restricted-v2</code> plus the one capability Buildah needs to build images without root, and the pipeline service account is allowed to use it. Either way, the pod never runs as root.</p>
+<p>The two steps were two containers in one pod, which is why the second step could read the file the first one wrote.</p>
+</div>
+<div class="paragraph">
+<p>The pod was admitted with <code>pipelines-scc</code>, not <code>restricted-v2</code>. It is <code>restricted-v2</code> plus one capability (<code>SETFCAP</code>), still with no privileged mode and no privilege escalation, but with one important difference: <strong>the step keeps the user its image declares</strong>, instead of getting a random UID from the namespace range. Buildah needs this to build images. The consequence is that a step whose image has no <code>USER</code> instruction runs as UID 0 inside its container.</p>
+</div>
+<div class="paragraph">
+<p>That is why every Task in this workshop declares a non-root user in its <code>stepTemplate</code> (<code>runAsNonRoot: true</code>, <code>runAsUser: 1001</code>), and the output above shows <code>uid=1001</code>. Only the Red Hat supported <code>buildah</code> step runs as root. Look at the <code>stepTemplate</code> in <code>21-pipelines-basics/hello-task.yaml</code>: make it a rule for every Task your teams write.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Platform teams that want stricter defaults can set <code>restricted-v2</code> as the default SCC for pipelines in the <code>TektonConfig</code> resource, and allow <code>pipelines-scc</code> only in namespaces that build images.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </details>

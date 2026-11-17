@@ -501,7 +501,7 @@ notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifec
 <div class="sect2">
 <h3 id="run-intake"><a class="anchor" href="#run-intake"></a>2. Run the intake pipeline on the image as delivered</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Create the three check Tasks, the gate and the <code>vendor-intake</code> Pipeline, then run it on <code>notes-legacy:latest</code>.</p>
@@ -549,6 +549,18 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 <div class="paragraph">
 <p>The <code>gate</code> Task:</p>
 </div>
+<div class="paragraph">
+<p>The <code>scan</code> Task:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
+[scan : scan] verdict: FAIL</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>gate</code> Task:</p>
+</div>
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[gate : decide] CHECK                      RESULT
@@ -559,7 +571,7 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>These are the same three findings you made by hand in Session 1, now in two minutes and with no source code.</p>
+<p>These are the same three findings you made by hand in Session 1, now in under a minute and with no source code.</p>
 </div>
 </div>
 </details>
@@ -609,7 +621,7 @@ oc exec deploy/notes-vendor -n "$NS" --context lab -- \
 <div class="sect2">
 <h3 id="level-2"><a class="anchor" href="#level-2"></a>4. Level 2: re-layer the vendor image</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~5 minutes (one build, two intake runs)</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~4 minutes (one 2-minute build, two 40-second intake runs)</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Build a thin layer on top of the unchanged vendor image with the existing build pipeline, then run intake on the result. Run it once without, and once with, a risk acceptance for the vendor&#8217;s CVEs.</p>
@@ -635,7 +647,7 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Only the CVEs remain. You cannot fix them without the vendor, so record a time-limited risk acceptance and run intake again:</p>
+<p>Only the CVEs remain. The fixable ones are in the vendor&#8217;s layers, and you cannot rebuild those, so record a time-limited risk acceptance and run intake again:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -672,9 +684,12 @@ oc get imagestream notes-vendor -n "$NS" --context lab \
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                    IMAGE REFERENCE                                                                         UPDATED
-notes-vendor:approved   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy-relayered@sha256:...   10 seconds ago
+notes-vendor:approved   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-vendor@sha256:...   1 second ago
 critical CVEs accepted at intake on 2026-11-18; review at next vendor release</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The approved tag points to exactly the digest that passed intake.</p>
 </div>
 </div>
 </details>
@@ -736,12 +751,12 @@ oc exec deploy/notes-vendor-userns -n "$NS" --context lab -- ls -ld /data</code>
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">uid=0(root) gid=0(root) groups=0(root)
-         0 2147483648      65536
-drwxr-xr-x. 1 root root 24 Nov 18 09:41 /data</code></pre>
+         0   56164352      65536
+drwxr-xr-x. 1 root root 23 Nov 18 09:41 /data</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p><code>uid_map</code> reads: UID 0 in the container is UID 2147483648 on the node, for a range of 65536 IDs. The exact host number varies per pod. The process writes to the root-owned <code>/data</code> in the image without an <code>emptyDir</code>, and the node sees an unprivileged user.</p>
+<p><code>uid_map</code> reads: UID 0 in the container is UID 56164352 on the node, for a range of 65536 IDs. The exact host number varies per pod. The process writes to the root-owned <code>/data</code> in the image without an <code>emptyDir</code>, and the node sees an unprivileged user.</p>
 </div>
 <div class="paragraph">
 <p>The exception is still an exception: it is granted to one ServiceAccount in one namespace, and other pods in the namespace keep running under <code>restricted-v2</code>.</p>
@@ -933,7 +948,10 @@ drwxr-xr-x. 1 root root 24 Nov 18 09:41 /data</code></pre>
   -n "$NS" --context lab --ignore-not-found
 oc delete -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context lab --ignore-not-found
 oc delete pipelinerun -l tekton.dev/pipeline=vendor-intake -n "$NS" --context lab --ignore-not-found
-oc delete imagestream notes-vendor notes-legacy-relayered -n "$NS" --context lab --ignore-not-found</code></pre>
+oc delete imagestream notes-vendor notes-legacy-relayered -n "$NS" --context lab --ignore-not-found
+oc delete -f 25-vendor-image-intake/pipeline.yaml -f 25-vendor-image-intake/gate-task.yaml \
+  -f 25-vendor-image-intake/uid-test-task.yaml -f 25-vendor-image-intake/inspect-task.yaml \
+  -n "$NS" --context lab --ignore-not-found</code></pre>
 </div>
 </div>
 <div class="paragraph">

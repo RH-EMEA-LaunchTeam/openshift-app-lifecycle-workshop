@@ -366,7 +366,10 @@
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The pipeline from Step 2 promotes any image that builds. This step adds a vulnerability scan between build and promote. The image is still built and pushed, so the security team can analyse it, but an image with <strong>critical</strong> vulnerabilities is never promoted to <code>notes-app:latest</code>, and therefore never rolled out.</p>
+<p>The pipeline from Step 2 promotes any image that builds. This step adds a vulnerability scan between build and promote. The image is still built and pushed, so the security team can analyse it, but an image with <strong>fixable critical</strong> vulnerabilities is never promoted to <code>notes-app:latest</code>, and therefore never rolled out.</p>
+</div>
+<div class="paragraph">
+<p>Critical vulnerabilities that do not have a fix yet are reported but do not block. Rebuilding cannot remove them, so blocking on them would stop every build of every team until the vendor of the base image ships a fix. Deciding what to do about them is a risk decision for the security owner, not a build failure. This is also how the default ACS policies treat severity.</p>
 </div>
 <div class="paragraph">
 <p>You will run the pipeline twice: once with the UBI-based <code>Containerfile</code> (passes), and once with the legacy Containerfile from Session 1, which uses a Docker Hub base image (blocked).</p>
@@ -399,7 +402,7 @@
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>acs-image-scan</code> Task downloads <code>roxctl</code> from ACS Central, so the client always matches the server version, and asks Central to scan the image <strong>by digest</strong>. It authenticates with an API token that has the <strong>Continuous Integration</strong> role. The token comes from the <code>acs-api</code> Secret, which the platform team provides to each tenant, so the token never appears in a pipeline definition or in Git.</p>
+<p>The <code>acs-image-scan</code> Task downloads <code>roxctl</code> from ACS Central, so the client always matches the server version, asks Central to scan the image <strong>by digest</strong>, and splits the critical CVEs into <strong>fixable</strong> and <strong>no fix yet</strong>. It authenticates with an API token that has the <strong>Continuous Integration</strong> role. The token comes from the <code>acs-api</code> Secret, which the platform team provides to each tenant, so the token never appears in a pipeline definition or in Git.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -415,7 +418,7 @@
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fail-on-critical: "true"</code> (default)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Critical CVEs fail the Task, so <code>promote</code> never runs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fixable critical CVEs fail the Task, so <code>promote</code> never runs</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fail-on-critical: "false"</code></p></td>
@@ -492,13 +495,13 @@ oc apply -f 23-scan-gate/acs-scan-task.yaml -f 23-scan-gate/pipeline.yaml \
 <div class="sect2">
 <h3 id="run-pass"><a class="anchor" href="#run-pass"></a>3. Run it on the UBI-based image</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~3 minutes</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Run the pipeline exactly as in Step 2.</p>
 </div>
 <div class="paragraph">
-<p><strong>Why:</strong> The hardened image is built on a Red Hat Universal Base Image, which Red Hat patches and rebuilds regularly. It is expected to pass.</p>
+<p><strong>Why:</strong> The hardened image is built on a Red Hat Universal Base Image, which Red Hat patches and rebuilds regularly. It is expected to pass, although it may report a critical CVE for which no fix has been published yet.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -515,8 +518,14 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[scan : scan] Scanning image-registry.openshift-image-registry.svc:5000/.../notes-app@sha256:... for CRITICAL vulnerabilities...
-[scan : scan] verdict: PASS</code></pre>
+[scan : scan]   NO FIX   CVE-2026-114406    ca-certificates              (reported, does not block)
+[scan : scan] critical CVEs: 0 fixable, 1 without a fix yet
+[scan : scan] verdict: PASS
+[promote : tag] promoted notes-app:92e70520... -&gt; notes-app:latest (sha256:...)</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The exact CVEs change from day to day as new ones are published and fixed.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -526,7 +535,7 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                    STARTED         DURATION   STATUS
-notes-app-build-p8x2m   3 minutes ago   2m40s      Succeeded</code></pre>
+notes-app-build-p8x2m   2 minutes ago   1m41s      Succeeded</code></pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -536,7 +545,7 @@ notes-app-build-p8x2m   3 minutes ago   2m40s      Succeeded</code></pre>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-A UBI image can occasionally have a critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 6 covers how the monthly patch cycle handles it.
+A UBI image can occasionally have a <strong>fixable</strong> critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 6 covers how the monthly patch cycle handles it.
 </td>
 </tr>
 </table>
@@ -548,7 +557,7 @@ A UBI image can occasionally have a critical CVE for a few days, between the fix
 <div class="sect2">
 <h3 id="run-fail"><a class="anchor" href="#run-fail"></a>4. Run it on the legacy image</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~3 minutes</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2-3 minutes</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Run the same pipeline, but build from <code>app/Containerfile.legacy</code> (Docker Hub base image).</p>
@@ -567,13 +576,20 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 <summary class="title">Verify: The scan failed and nothing was promoted</summary>
 <div class="content">
 <div class="paragraph">
-<p>The <code>scan</code> Task prints a table of critical CVEs from the Debian-based image and ends with:</p>
+<p>The <code>scan</code> Task lists the critical CVEs of the Debian-based image and ends with:</p>
 </div>
 <div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[scan : scan] verdict: FAIL
-[scan : scan] Critical vulnerabilities found: the image is NOT promoted.</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[scan : scan]   FIXABLE  CVE-2026-42216     libopenexr-3-1-30            fixed in 3.2.12-1~deb13u1
+[scan : scan]   ...
+[scan : scan]   NO FIX   CVE-2026-6653      libxml2                      (reported, does not block)
+[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
+[scan : scan] verdict: FAIL
+[scan : scan] Fixable critical vulnerabilities found: the image is NOT promoted.</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Same code, same pipeline: the Debian-based image has 15 critical findings against 1 for UBI, and 4 of them would disappear with a simple rebuild on a patched base.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -585,7 +601,7 @@ echo "now:    $(curl -sk "https://$ROUTE/api/info" | jq -r .version)"</code></pr
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                           STARTED         DURATION   STATUS
-notes-app-build-legacy-t5v7c   3 minutes ago   2m50s      Failed
+notes-app-build-legacy-t5v7c   2 minutes ago   2m28s      Failed
 before: 3f2c1ab9e8...
 now:    3f2c1ab9e8...</code></pre>
 </div>
@@ -616,7 +632,7 @@ now:    3f2c1ab9e8...</code></pre>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Every image that builds is promoted</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Images with critical CVEs stop before promotion</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images with fixable critical CVEs stop before promotion; unfixed ones are reported</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Vulnerabilities found after deployment, if ever</p></td>
@@ -658,7 +674,7 @@ now:    3f2c1ab9e8...</code></pre>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Session 6 (monthly patch cycle) and Session 7 (ACS in daily operations)</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The rule "no critical CVEs" is hard-coded in the pipeline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The rule "no fixable critical CVEs" is hard-coded in the pipeline</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Session 7: <code>roxctl image check</code> evaluates policies that the security team manages centrally in ACS, so the rule changes without editing any pipeline</p></td>
 </tr>
 </tbody>
@@ -696,8 +712,12 @@ now:    3f2c1ab9e8...</code></pre>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>roxctl image scan</code> with a severity threshold (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>roxctl image scan</code> with a severity and fixability threshold (this step)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Simple and explicit. The threshold lives in the pipeline.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Block on every critical CVE, fixed or not</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Strictest, but blocks builds for vulnerabilities nobody can fix yet, which pushes teams to bypass the gate.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>roxctl image check</code> against ACS policies</p></td>

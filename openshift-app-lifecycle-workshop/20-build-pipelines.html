@@ -503,7 +503,7 @@
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-To prepare your own cluster, run <code>20-session-prep/platform-setup.sh</code> as cluster-admin. Its header explains the arguments.
+To prepare your own cluster, run <code>20-session-prep/platform-setup.sh</code> as cluster-admin, <strong>at least one hour before the session</strong>. Its header explains the arguments. Most of the time goes into the first download of the ACS vulnerability database (about 40 minutes on a fresh cluster); the script waits until a real scan succeeds.
 </td>
 </tr>
 </table>
@@ -530,8 +530,11 @@ tkn version --component client</code></pre>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">user1
 project.project.openshift.io/app-lifecycle-user1
-Client version: 0.4x.x</code></pre>
+Client version: 0.46.2</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Any recent <code>tkn</code> works.</p>
 </div>
 <div class="paragraph">
 <p>If <code>tkn</code> is missing, use the OpenShift <strong>Web Terminal</strong>, which includes it.</p>
@@ -543,13 +546,13 @@ Client version: 0.4x.x</code></pre>
 <div class="sect2">
 <h3 id="catch-up"><a class="anchor" href="#catch-up"></a>2. Catch up to the end of Session 1</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~3 minutes</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Run the catch-up script. It builds both images and deploys <code>notes-app</code> in the state it had at the end of <a href="15-stateless-and-scale.html" class="xref page">Session 1, Step 5</a>.</p>
 </div>
 <div class="paragraph">
-<p><strong>Why:</strong> This is a new cluster, so nothing from Session 1 exists yet. The script needs only admin rights on your namespace.</p>
+<p><strong>Why:</strong> This is a new cluster, so nothing from Session 1 exists yet. The script needs only admin rights on your namespace. The platform team has already put the legacy image into your namespace, so only the hardened image is built.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -572,7 +575,7 @@ echo "export ROUTE=$ROUTE" &gt;&gt; myenv.sh</code></pre>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The legacy image pulls its base from Docker Hub. If the script stops with <code>toomanyrequests</code>, wait a few minutes and run it again. It is safe to re-run.
+The script is safe to re-run. If the legacy image was not provided by the platform team, the script builds it too, pulling its base from Docker Hub. If that stops with <code>toomanyrequests</code>, wait a few minutes and run it again.
 </td>
 </tr>
 </table>
@@ -592,9 +595,9 @@ oc get istag -n "$NS" --context lab</code></pre>
   "version": "1.0",
   "storage": "postgresql"
 }
-NAME                  IMAGE REFERENCE                                   UPDATED
-notes-app:latest      image-registry.openshift-image-registry.svc:5000/...   1 minute ago
-notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/...   1 minute ago</code></pre>
+NAME                  IMAGE REFERENCE                                                                       UPDATED
+notes-app:latest      image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-app@sha256:...      About a minute ago
+notes-legacy:latest   image-registry.openshift-image-registry.svc:5000/app-lifecycle-user1/notes-legacy@sha256:...   3 minutes ago</code></pre>
 </div>
 </div>
 <div class="paragraph">
