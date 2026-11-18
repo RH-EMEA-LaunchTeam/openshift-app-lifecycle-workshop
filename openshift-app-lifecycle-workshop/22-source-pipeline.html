@@ -509,17 +509,14 @@
 tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 </div>
 </div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-The same run is easier to follow in the web console: <strong>Pipelines</strong> &gt; <strong>PipelineRuns</strong> in your project shows each Task as a box, with its logs one click away.
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>The same run is easier to follow in the web console. Open <strong>Pipelines</strong> &gt; <strong>PipelineRuns</strong> in your project and select the run: each Task is a box that turns green when it succeeds, and selecting a box opens its logs.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/22-pipelinerun-graph.png" alt="PipelineRun in the OpenShift web console: the clone" width="build and promote Tasks all succeeded" height="700">
+</div>
+<div class="title">Figure 1. The PipelineRun in the web console</div>
 </div>
 <details>
 <summary class="title">Verify: The run succeeded and the commit tag exists</summary>
