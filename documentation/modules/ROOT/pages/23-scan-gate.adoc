@@ -166,6 +166,11 @@ envsubst < 23-scan-gate/pipelinerun-legacy.yaml | oc create -f - -n "$NS" --cont
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
+In the web console (*Pipelines* > *PipelineRuns*), the run stops at `scan`, and `promote` is never started:
+
+.The scan gate stops the legacy image before promotion
+image::23-legacy-blocked.png[PipelineRun in the OpenShift web console: clone and build succeeded, scan failed, promote was never started,700]
+
 .Verify: The scan failed and nothing was promoted
 [%collapsible]
 ====

@@ -103,6 +103,11 @@ oc create -f 25-vendor-image-intake/pipelinerun-intake.yaml -n "$NS" --context {
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
+In the web console, the shape of the intake is visible at a glance: three independent checks run in parallel, then the gate decides. The checks themselves always succeed; their verdicts are what the gate reads.
+
+.Intake of the image as delivered: rejected by the gate
+image::25-intake-rejected.png[Intake PipelineRun in the OpenShift web console: inspect, scan and uid-test ran in parallel, the gate failed, promote was never started,600]
+
 .Verify: The image is rejected, for three reasons
 [%collapsible]
 ====
@@ -233,6 +238,14 @@ ACCEPT_CVES=true envsubst < 25-vendor-image-intake/pipelinerun-intake-relayered.
   | oc create -f - -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
+
+This time the whole graph is green, and the `gate` log (*Logs* tab, then `gate`) records why the image was approved:
+
+.Intake of the re-layered image with a recorded risk acceptance: approved
+image::25-intake-approved.png[Intake PipelineRun in the OpenShift web console: all checks, the gate and promote succeeded,600]
+
+.The gate decision in the web console
+image::25-gate-log.png[Gate log in the OpenShift web console: image configuration WARN, critical CVEs FAIL with risk accepted, runs as arbitrary UID PASS, intake approved,800]
 
 .Verify: Approved, with the exception recorded on the image
 [%collapsible]

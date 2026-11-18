@@ -45,6 +45,7 @@ spec:
           value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.source-istag)
 
     - name: gate
+      runAfter: [inspect, scan, uid-test]   # explicit, so the console draws the graph correctly
       taskRef:
         name: intake-gate
       params:
