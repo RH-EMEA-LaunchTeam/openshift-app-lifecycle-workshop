@@ -252,6 +252,9 @@ The pod runs a digest, the digest carries the repository and commit as labels, a
 | BuildConfig with a Git source and webhook
 | Simpler for a single image, but no scan gate, no multi-step logic and no promotion step. Fine for prototypes.
 
+| Builds for Red Hat OpenShift (Shipwright)
+| The Kubernetes-native successor to BuildConfig. One `Build` API runs Buildah, S2I or Buildpacks strategies. Useful when many teams need builds without each one owning a pipeline.
+
 | An external CI system (GitHub Actions, GitLab CI, Jenkins)
 | A valid choice if the organisation already standardised on it. The pipeline stages and the promote-only-after-gate rule stay the same; the CI needs a registry credential and network access to the cluster.
 |===
@@ -269,5 +272,7 @@ oc delete pipelinerun -l tekton.dev/pipeline=notes-app-build -n "$NS" --context 
 oc delete -f 22-source-pipeline/pipeline.yaml -f 22-source-pipeline/promote-task.yaml \
   -n "$NS" --context {lab-context} --ignore-not-found
 ----
+
+NOTE: Deleted runs can still appear in the web console's run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones `tkn pipelinerun list` and `tkn taskrun list` show.
 
 TIP: Skip the reset if you continue with Step 3, which updates this pipeline in place.

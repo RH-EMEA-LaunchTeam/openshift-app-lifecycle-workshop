@@ -277,6 +277,9 @@ The `image.openshift.io/triggers` annotation on the Deployment replaced `notes-a
 
 | Source-to-Image (S2I)
 | Builds the image from source without a Containerfile and applies these rules automatically. A good fit for in-house code; less useful when vendors ship their own Containerfile.
+
+| Cloud Native Buildpacks
+| The cross-platform equivalent of S2I: a builder detects the language and assembles the image without a Containerfile. Widely used outside OpenShift. The base image lives inside the builder, so patching means rebuilding or rebasing onto a new builder rather than bumping a `FROM` line.
 |===
 
 '''

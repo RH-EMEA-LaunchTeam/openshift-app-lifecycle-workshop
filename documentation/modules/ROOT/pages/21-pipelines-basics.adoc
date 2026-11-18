@@ -232,4 +232,6 @@ oc delete taskrun -l app.kubernetes.io/part-of=notes-app -n "$NS" --context {lab
 oc delete -f 21-pipelines-basics/hello-task.yaml -n "$NS" --context {lab-context} --ignore-not-found
 ----
 
+NOTE: Deleted runs can still appear in the web console's run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones `tkn pipelinerun list` and `tkn taskrun list` show.
+
 TIP: Keep the `pipeline-ws` claim. Steps 2 to 6 use it.
