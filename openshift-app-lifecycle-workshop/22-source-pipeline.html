@@ -707,6 +707,10 @@ https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git
 <td class="tableblock halign-left valign-top"><p class="tableblock">Simpler for a single image, but no scan gate, no multi-step logic and no promotion step. Fine for prototypes.</p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Builds for Red Hat OpenShift (Shipwright)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Kubernetes-native successor to BuildConfig. One <code>Build</code> API runs Buildah, S2I or Buildpacks strategies. Useful when many teams need builds without each one owning a pipeline.</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">An external CI system (GitHub Actions, GitLab CI, Jenkins)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A valid choice if the organisation already standardised on it. The pipeline stages and the promote-only-after-gate rule stay the same; the CI needs a registry credential and network access to the cluster.</p></td>
 </tr>
@@ -727,6 +731,18 @@ https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git
 oc delete -f 22-source-pipeline/pipeline.yaml -f 22-source-pipeline/promote-task.yaml \
   -n "$NS" --context lab --ignore-not-found</code></pre>
 </div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Deleted runs can still appear in the web console&#8217;s run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones <code>tkn pipelinerun list</code> and <code>tkn taskrun list</code> show.
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock tip">
 <table>

@@ -757,6 +757,10 @@ sha256:9e0f...</code></pre>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Source-to-Image (S2I)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Builds the image from source without a Containerfile and applies these rules automatically. A good fit for in-house code; less useful when vendors ship their own Containerfile.</p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud Native Buildpacks</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cross-platform equivalent of S2I: a builder detects the language and assembles the image without a Containerfile. Widely used outside OpenShift. The base image lives inside the builder, so patching means rebuilding or rebasing onto a new builder rather than bumping a <code>FROM</code> line.</p></td>
+</tr>
 </tbody>
 </table>
 <hr>

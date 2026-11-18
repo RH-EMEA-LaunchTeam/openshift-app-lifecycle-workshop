@@ -978,6 +978,18 @@ oc delete -f 25-vendor-image-intake/pipeline.yaml -f 25-vendor-image-intake/gate
   -n "$NS" --context lab --ignore-not-found</code></pre>
 </div>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Deleted runs can still appear in the web console&#8217;s run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones <code>tkn pipelinerun list</code> and <code>tkn taskrun list</code> show.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Cluster-admin only, when no namespace uses it any more:</p>
 </div>

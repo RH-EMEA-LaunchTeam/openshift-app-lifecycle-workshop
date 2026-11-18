@@ -678,6 +678,18 @@ pipeline-ws   Pending                                      gp3-csi        5s</co
 oc delete -f 21-pipelines-basics/hello-task.yaml -n "$NS" --context lab --ignore-not-found</code></pre>
 </div>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Deleted runs can still appear in the web console&#8217;s run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones <code>tkn pipelinerun list</code> and <code>tkn taskrun list</code> show.
+</td>
+</tr>
+</table>
+</div>
 <div class="admonitionblock tip">
 <table>
 <tr>
