@@ -520,6 +520,15 @@ oc create -f 25-vendor-image-intake/pipelinerun-intake.yaml -n "$NS" --context l
 tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>In the web console, the shape of the intake is visible at a glance: three independent checks run in parallel, then the gate decides. The checks themselves always succeed; their verdicts are what the gate reads.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/25-intake-rejected.png" alt="Intake PipelineRun in the OpenShift web console: inspect" width="scan and uid-test ran in parallel" height="the gate failed">
+</div>
+<div class="title">Figure 1. Intake of the image as delivered: rejected by the gate</div>
+</div>
 <details>
 <summary class="title">Verify: The image is rejected, for three reasons</summary>
 <div class="content">
@@ -655,6 +664,21 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
   | oc create -f - -n "$NS" --context lab
 tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>This time the whole graph is green, and the <code>gate</code> log (<strong>Logs</strong> tab, then <code>gate</code>) records why the image was approved:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/25-intake-approved.png" alt="Intake PipelineRun in the OpenShift web console: all checks" width="the gate and promote succeeded" height="600">
+</div>
+<div class="title">Figure 2. Intake of the re-layered image with a recorded risk acceptance: approved</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/25-gate-log.png" alt="Gate log in the OpenShift web console: image configuration WARN" width="critical CVEs FAIL with risk accepted" height="runs as arbitrary UID PASS">
+</div>
+<div class="title">Figure 3. The gate decision in the web console</div>
 </div>
 <details>
 <summary class="title">Verify: Approved, with the exception recorded on the image</summary>
