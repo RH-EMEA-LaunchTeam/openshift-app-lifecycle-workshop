@@ -14,7 +14,23 @@ This page prepares your environment: log in to the workshop cluster, export the 
 * From Session 2: a normal user with admin rights on your own namespace is enough. On a shared cluster, the instructor prepares the platform-side objects for everyone.
 * Session 2, Step 4 (optional): a GitHub account
 
-TIP: If you cannot install tools on your workstation, open the *Web Terminal* from the `>_` icon in the top-right corner of the OpenShift web console. It already has `oc`, `tkn`, `git`, `curl` and `jq`, and it is logged in as your user. You can skip the login part of this page and go straight to <<clone-repo>>, then run `oc config rename-context "$(oc config current-context)" {lab-context}` once.
+[TIP]
+====
+If you cannot install tools on your workstation, use the *Web Terminal* instead: select the `>_` icon in the top-right corner of the OpenShift web console. It is already logged in as your user and has `oc`, `git`, `curl` and `jq`.
+
+The first time, the terminal asks for a *Project*: select your own namespace (for example `app-lifecycle-user1`), not *Create Project*, then select *Start*. Then run:
+
+[source,bash]
+----
+git clone https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git
+cd openshift-app-lifecycle-workshop
+source 20-session-prep/web-terminal-env.sh
+----
+
+The script installs `tkn` from the cluster (the Web Terminal does not include it), adds `envsubst`, names the context `{lab-context}` and exports `NS`, `GIT_REPO_URL` and `ROUTE`. Skip the rest of this page.
+
+The Web Terminal does not keep files when it restarts, for example after a period of inactivity. If you reopen it, run the three commands again.
+====
 
 [#cluster-mapping]
 == Cluster mapping

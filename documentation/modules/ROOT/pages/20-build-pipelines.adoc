@@ -101,7 +101,7 @@ Client version: 0.46.2
 
 Any recent `tkn` works.
 
-If `tkn` is missing, use the OpenShift *Web Terminal*, which includes it.
+If `tkn` is missing on your workstation, install it from the web console (*?* > *Command line tools*), or use the Web Terminal as described in the xref:00-setup.adoc#prerequisites[setup TIP].
 ====
 
 '''

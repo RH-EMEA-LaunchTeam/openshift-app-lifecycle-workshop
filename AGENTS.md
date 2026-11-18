@@ -21,6 +21,8 @@ on a throwaway Demo Platform cluster followed by two days of hands-on access.
 - Session 2 is built (`21-` to `26-`). `20-session-prep/` holds the instructor-only
   `platform-setup.sh` (cluster-admin: operators, ACS, shared pipelines, tenant
   namespaces) and the participant `catch-up.sh` (recreates the Session 1 end state)
+  and `web-terminal-env.sh` (prepares an OpenShift Web Terminal: tkn, envsubst, lab
+  context, NS/ROUTE)
 - `.tekton/` at the repo root holds the Pipelines as Code triggers for Session 2, Step 4
 - From Session 2 on, participants share one cluster as normal users with admin on
   their own namespace; anything cluster-scoped goes into the instructor prep

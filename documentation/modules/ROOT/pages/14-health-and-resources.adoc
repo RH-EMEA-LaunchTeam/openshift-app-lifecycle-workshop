@@ -73,7 +73,7 @@ Name:                   tenant-quota
 Namespace:              app-lifecycle
 Resource                Used  Hard
 --------                ----  ----
-limits.memory           0     8Gi
+limits.memory           0     12Gi
 persistentvolumeclaims  0     5
 pods                    1     20
 requests.cpu            0     2
@@ -126,7 +126,7 @@ oc describe resourcequota tenant-quota -n "$NS" --context {lab-context} | grep -
     Liveness:   http-get http://:http/healthz/live delay=0s timeout=1s period=10s #success=1 #failure=3
     Readiness:  http-get http://:http/healthz/ready delay=0s timeout=1s period=5s #success=1 #failure=2
     Startup:    http-get http://:http/healthz/live delay=0s timeout=1s period=2s #success=1 #failure=30
-limits.memory           256Mi  8Gi
+limits.memory           256Mi  12Gi
 requests.cpu            50m    2
 requests.memory         128Mi  4Gi
 ----
