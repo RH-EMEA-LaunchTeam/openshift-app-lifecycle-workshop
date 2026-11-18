@@ -404,7 +404,25 @@
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-If you cannot install tools on your workstation, open the <strong>Web Terminal</strong> from the <code>&gt;_</code> icon in the top-right corner of the OpenShift web console. It already has <code>oc</code>, <code>tkn</code>, <code>git</code>, <code>curl</code> and <code>jq</code>, and it is logged in as your user. You can skip the login part of this page and go straight to <a href="#clone-repo">4. Clone the repository</a>, then run <code>oc config rename-context "$(oc config current-context)" lab</code> once.
+<div class="paragraph">
+<p>If you cannot install tools on your workstation, use the <strong>Web Terminal</strong> instead: select the <code>&gt;_</code> icon in the top-right corner of the OpenShift web console. It is already logged in as your user and has <code>oc</code>, <code>git</code>, <code>curl</code> and <code>jq</code>.</p>
+</div>
+<div class="paragraph">
+<p>The first time, the terminal asks for a <strong>Project</strong>: select your own namespace (for example <code>app-lifecycle-user1</code>), not <strong>Create Project</strong>, then select <strong>Start</strong>. Then run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git clone https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git
+cd openshift-app-lifecycle-workshop
+source 20-session-prep/web-terminal-env.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The script installs <code>tkn</code> from the cluster (the Web Terminal does not include it), adds <code>envsubst</code>, names the context <code>lab</code> and exports <code>NS</code>, <code>GIT_REPO_URL</code> and <code>ROUTE</code>. Skip the rest of this page.</p>
+</div>
+<div class="paragraph">
+<p>The Web Terminal does not keep files when it restarts, for example after a period of inactivity. If you reopen it, run the three commands again.</p>
+</div>
 </td>
 </tr>
 </table>
