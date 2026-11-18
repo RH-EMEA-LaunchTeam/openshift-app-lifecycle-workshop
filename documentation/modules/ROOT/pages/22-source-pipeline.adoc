@@ -110,7 +110,10 @@ envsubst < 22-source-pipeline/pipelinerun.yaml | oc create -f - -n "$NS" --conte
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
-TIP: The same run is easier to follow in the web console: *Pipelines* > *PipelineRuns* in your project shows each Task as a box, with its logs one click away.
+The same run is easier to follow in the web console. Open *Pipelines* > *PipelineRuns* in your project and select the run: each Task is a box that turns green when it succeeds, and selecting a box opens its logs.
+
+.The PipelineRun in the web console
+image::22-pipelinerun-graph.png[PipelineRun in the OpenShift web console: the clone, build and promote Tasks all succeeded,700]
 
 .Verify: The run succeeded and the commit tag exists
 [%collapsible]

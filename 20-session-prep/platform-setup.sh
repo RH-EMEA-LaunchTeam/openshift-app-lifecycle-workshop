@@ -45,6 +45,13 @@ wait_for "TektonConfig to be ready" 900 \
   occ wait tektonconfig/config --for=condition=Ready --timeout=5s
 wait_for "pipelines-as-code route" 300 \
   occ get route pipelines-as-code-controller -n openshift-pipelines
+# The operator ships the console plugin but does not always enable it; without
+# it there is no Pipelines section (task graphs, logs) in the web console.
+wait_for "pipelines console plugin" 300 occ get consoleplugin pipelines-console-plugin
+if ! occ get consoles.operator.openshift.io cluster -o jsonpath='{.spec.plugins}' | grep -q pipelines-console-plugin; then
+  occ patch consoles.operator.openshift.io cluster --type=json \
+    -p '[{"op":"add","path":"/spec/plugins/-","value":"pipelines-console-plugin"}]' >/dev/null
+fi
 
 if [[ "${SKIP_ACS:-0}" != 1 ]]; then
   echo "==> 2/6 ACS Central and SecuredCluster"
