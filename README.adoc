@@ -2,7 +2,7 @@
 
 A workshop series that follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image monthly, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster followed by hands-on access.
 
-Session 1 (onboarding-ready applications) and Session 2 (build pipelines) are complete. Sessions 3 to 10 are planned and shown as outlines; the Session 3 manifests (`31-` to `33-`) are already in the repository because the platform setup uses them.
+Session 1 (onboarding-ready applications), Session 2 (build pipelines) and Session 3 (vendor images and shared pipelines) are complete. Sessions 4 to 10 are planned and shown as outlines.
 
 == View the course
 
