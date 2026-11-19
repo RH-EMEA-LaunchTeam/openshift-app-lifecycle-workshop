@@ -84,29 +84,13 @@ The series is written for platform teams that are bringing many existing contain
 * xref:23-scan-gate.adoc#run-fail[Block critical CVEs]
 
 [.tiles.browse]
-== Session 3: Vendor Images and Shared Pipelines
-
-[.tile]
-.xref:30-vendor-intake.adoc[Overview and catch-up]
-* xref:30-vendor-intake.adoc#catch-up[Session 2 end state in 3 minutes]
-
-[.tile]
-.xref:31-pipelines-as-code.adoc[Step 1: Pipelines as Code]
-* xref:31-pipelines-as-code.adoc#pull-request[Pull requests build]
-* xref:31-pipelines-as-code.adoc#merge[Merges promote]
-
-[.tile]
-.xref:32-vendor-image-intake.adoc[Step 2: Vendor image intake]
-* xref:32-vendor-image-intake.adoc#run-intake[Automated intake checks]
-* xref:32-vendor-image-intake.adoc#level-2[Re-layer without source]
-* xref:32-vendor-image-intake.adoc#level-3[Root in a user namespace]
-
-[.tile]
-.xref:33-pipeline-service.adoc[Step 3: Pipelines as a service]
-* xref:33-pipeline-service.adoc#catalogue[Publish once, reuse everywhere]
-
-[.tiles.browse]
 == Upcoming Sessions
+
+[.tile]
+.xref:30-vendor-intake.adoc[Session 3: Vendor images and shared pipelines]
+* Pull requests build, merges promote
+* Vendor image intake
+* Pipelines as a service
 
 [.tile]
 .xref:40-gitops-deploy.adoc[Session 4: GitOps deployment]

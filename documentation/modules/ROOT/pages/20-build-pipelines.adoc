@@ -54,7 +54,7 @@ This session runs on a fresh cluster that several participants share. Each parti
 | Platform guardrails from xref:14-health-and-resources.adoc#tenant-guardrails[Session 1, Step 4]
 
 | `platform-pipelines` namespace with shared Tasks and Pipelines
-| Used in xref:33-pipeline-service.adoc[Session 3, Step 3]
+| Used in xref:30-vendor-intake.adoc[Session 3]
 |===
 
 NOTE: To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cluster-admin, *at least one hour before the session*. Its header explains the arguments. Most of the time goes into the first download of the ACS vulnerability database (about 40 minutes on a fresh cluster); the script waits until a real scan succeeds.

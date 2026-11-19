@@ -233,7 +233,7 @@ The pod runs a digest, the digest carries the repository and commit as labels, a
 | xref:23-scan-gate.adoc[Step 3: Scan Gate]
 
 | Someone still has to start the pipeline
-| xref:31-pipelines-as-code.adoc[Session 3, Step 1: Pipelines as Code]
+| xref:30-vendor-intake.adoc[Session 3]: Pipelines as Code
 |===
 
 == Official Documentation

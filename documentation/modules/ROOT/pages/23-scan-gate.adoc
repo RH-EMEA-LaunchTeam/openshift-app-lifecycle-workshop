@@ -31,7 +31,7 @@ The `acs-image-scan` Task downloads `roxctl` from ACS Central, so the client alw
 | Fixable critical CVEs fail the Task, so `promote` never runs
 
 | `fail-on-critical: "false"`
-| The scan reports and records a verdict, but does not stop the pipeline. Used in xref:32-vendor-image-intake.adoc[Session 3, Step 2], where a separate gate decides.
+| The scan reports and records a verdict, but does not stop the pipeline. Used in xref:30-vendor-intake.adoc[Session 3], where a separate gate decides.
 |===
 
 == Steps to Apply
@@ -234,10 +234,10 @@ The pipeline failed at `scan`, `promote` was never started, and the running appl
 | Remaining Problem | Addressed In
 
 | Someone still starts the pipeline by hand
-| xref:31-pipelines-as-code.adoc[Session 3, Step 1: Pipelines as Code]
+| xref:30-vendor-intake.adoc[Session 3]: Pipelines as Code
 
 | Images we cannot rebuild from source
-| xref:32-vendor-image-intake.adoc[Session 3, Step 2: Vendor Image Intake]
+| xref:30-vendor-intake.adoc[Session 3]: Vendor Image Intake
 
 | CVEs published *after* the image passed the gate
 | Session 7 (monthly patch cycle) and Session 8 (ACS in daily operations)

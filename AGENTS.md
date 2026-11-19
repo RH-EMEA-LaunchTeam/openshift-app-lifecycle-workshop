@@ -19,8 +19,9 @@ on a throwaway Demo Platform cluster followed by two days of hands-on access.
 - YAML manifests live in the root step directories (`11-legacy-app/`, `12-image-hygiene/`, ...)
 - `16-admission-checklist/audit-namespace.sh` audits a namespace against the checklist
 - Session 10 uses a three-digit prefix (`100-capstone`)
-- Sessions 2 (`21-` to `23-`) and 3 (`31-` to `33-`) are built. They share the
-  same cluster setup. `20-session-prep/` holds the instructor-only
+- Session 2 (`21-` to `23-`) is built. Session 3 pages are developed on the
+  `session-3` branch; its manifests (`31-` to `33-`) are on main because
+  `platform-setup.sh` uses them. Sessions 2 and 3 share the same cluster setup. `20-session-prep/` holds the instructor-only
   `platform-setup.sh` (cluster-admin: operators, ACS, shared pipelines, tenant
   namespaces) and the participant `catch-up.sh` (recreates the Session 1 end state, or with `3` also the Session 2 end state)
   and `web-terminal-env.sh` (prepares an OpenShift Web Terminal: tkn, envsubst, lab
