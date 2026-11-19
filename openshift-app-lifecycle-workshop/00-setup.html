@@ -262,54 +262,6 @@
   </li>
 </ul>
   </li>
-  <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
-  </li>
-</ul>
-  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -317,25 +269,28 @@
     <span class="nav-text">Upcoming Sessions</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+    <a class="nav-link" href="30-vendor-intake.html">Session 3: Vendor Images and Shared Pipelines</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+    <a class="nav-link" href="40-gitops-deploy.html">Session 4: GitOps Deployment</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
+    <a class="nav-link" href="50-observe.html">Session 5: Run and Observe</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
+    <a class="nav-link" href="60-backup-restore.html">Session 6: Backup and Restore</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
+    <a class="nav-link" href="70-monthly-patching.html">Session 7: Monthly Patch Cycle</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
+    <a class="nav-link" href="80-secure-operations.html">Session 8: Secure Operations</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
+    <a class="nav-link" href="90-fleet-environments.html">Session 9: Fleet and Environments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="100-capstone.html">Session 10: Capstone</a>
   </li>
 </ul>
   </li>
@@ -393,7 +348,7 @@
 <p>From Session 2: a normal user with admin rights on your own namespace is enough. On a shared cluster, the instructor prepares the platform-side objects for everyone.</p>
 </li>
 <li>
-<p>Session 2, Step 4 (optional): a GitHub account</p>
+<p>Session 3 (optional Pipelines as Code step): a GitHub account</p>
 </li>
 </ul>
 </div>
@@ -529,7 +484,7 @@ export LAB_API_URL="https://api.&lt;cluster-domain&gt;:6443"
 export NS="app-lifecycle"     # on a shared cluster: the namespace you were given, e.g. app-lifecycle-user1
 export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
 
-# ── Session 2, Step 4 (optional) ─────────────────────────────────────────
+# ── Session 3 (optional) ─────────────────────────────────────────────────
 export GITHUB_FORK_URL="https://github.com/&lt;your-github-user&gt;/openshift-app-lifecycle-workshop"
 export PAC_WEBHOOK_URL="&lt;provided by the instructor&gt;"
 
@@ -572,17 +527,17 @@ oc config rename-context "$(oc config current-context)" lab</code></pre>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ROUTE</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Session 1 Steps 2 to 5, Session 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Session 1 Steps 2 to 5, Sessions 2 and 3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Hostname of the application route. Set in <a href="12-image-hygiene.html#expose" class="xref page">Step 2</a>, or by the <a href="20-build-pipelines.html#catch-up" class="xref page">Session 2 catch-up</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>GITHUB_FORK_URL</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="24-pipelines-as-code.html" class="xref page">Session 2, Step 4</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="30-vendor-intake.html" class="xref page">Session 3</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Your fork of the workshop repository on GitHub, without <code>.git</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>PAC_WEBHOOK_URL</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="24-pipelines-as-code.html" class="xref page">Session 2, Step 4</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="30-vendor-intake.html" class="xref page">Session 3</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Webhook URL of the Pipelines as Code controller. The instructor provides it (route <code>pipelines-as-code-controller</code> in <code>openshift-pipelines</code>).</p></td>
 </tr>
 </tbody>
