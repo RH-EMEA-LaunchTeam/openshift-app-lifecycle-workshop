@@ -31,7 +31,7 @@ The `acs-image-scan` Task downloads `roxctl` from ACS Central, so the client alw
 | Fixable critical CVEs fail the Task, so `promote` never runs
 
 | `fail-on-critical: "false"`
-| The scan reports and records a verdict, but does not stop the pipeline. Used in Step 5, where a separate gate decides.
+| The scan reports and records a verdict, but does not stop the pipeline. Used in xref:32-vendor-image-intake.adoc[Session 3, Step 2], where a separate gate decides.
 |===
 
 == Steps to Apply
@@ -144,7 +144,7 @@ NAME                    STARTED         DURATION   STATUS
 notes-app-build-p8x2m   2 minutes ago   1m41s      Succeeded
 ----
 
-NOTE: A UBI image can occasionally have a *fixable* critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 6 covers how the monthly patch cycle handles it.
+NOTE: A UBI image can occasionally have a *fixable* critical CVE for a few days, between the fix being published and the base image being rebuilt. If that happens here, the gate is doing its job. Session 7 covers how the monthly patch cycle handles it.
 ====
 
 '''
@@ -234,16 +234,16 @@ The pipeline failed at `scan`, `promote` was never started, and the running appl
 | Remaining Problem | Addressed In
 
 | Someone still starts the pipeline by hand
-| xref:24-pipelines-as-code.adoc[Step 4: Pipelines as Code]
+| xref:31-pipelines-as-code.adoc[Session 3, Step 1: Pipelines as Code]
 
 | Images we cannot rebuild from source
-| xref:25-vendor-image-intake.adoc[Step 5: Vendor Image Intake]
+| xref:32-vendor-image-intake.adoc[Session 3, Step 2: Vendor Image Intake]
 
 | CVEs published *after* the image passed the gate
-| Session 6 (monthly patch cycle) and Session 7 (ACS in daily operations)
+| Session 7 (monthly patch cycle) and Session 8 (ACS in daily operations)
 
 | The rule "no fixable critical CVEs" is hard-coded in the pipeline
-| Session 7: `roxctl image check` evaluates policies that the security team manages centrally in ACS, so the rule changes without editing any pipeline
+| Session 8: `roxctl image check` evaluates policies that the security team manages centrally in ACS, so the rule changes without editing any pipeline
 |===
 
 == Official Documentation
@@ -264,7 +264,7 @@ The pipeline failed at `scan`, `promote` was never started, and the running appl
 | Strictest, but blocks builds for vulnerabilities nobody can fix yet, which pushes teams to bypass the gate.
 
 | `roxctl image check` against ACS policies
-| The production pattern: the security team enables build-time enforcement on policies in ACS, and every pipeline obeys them. Covered in Session 7.
+| The production pattern: the security team enables build-time enforcement on policies in ACS, and every pipeline obeys them. Covered in Session 8.
 
 | Admission control (ACS admission controller, or signature verification)
 | Blocks non-compliant images at deploy time, whatever their source. Complements a pipeline gate and does not replace it, because it gives feedback much later.

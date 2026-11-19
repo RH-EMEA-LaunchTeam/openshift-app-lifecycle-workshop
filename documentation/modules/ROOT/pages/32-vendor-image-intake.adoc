@@ -1,14 +1,14 @@
-= Step 5 - Vendor Image Intake: Images You Cannot Rebuild
+= Step 2 - Vendor Image Intake: Images You Cannot Rebuild
 include::_attributes.adoc[]
 
-Steps 2 to 4 assume you have the source code. For most workloads on a platform that hosts third-party software, you do not: the vendor delivers a finished image, often built for `docker run` on a VM, running as root, with configuration and sometimes credentials baked in. You cannot fix the Containerfile, and "ask the vendor" can take a year.
+The pipelines so far assume you have the source code. For most workloads on a platform that hosts third-party software, you do not: the vendor delivers a finished image, often built for `docker run` on a VM, running as root, with configuration and sometimes credentials baked in. You cannot fix the Containerfile, and "ask the vendor" can take a year.
 
 This step builds an *intake* pipeline for such images and then works through four *remediation levels*, from cheapest to most expensive, using the legacy image from Session 1 as the "vendor" image. The key lesson: *most images that "need root" only need a writable directory and an unprivileged port*, and you can provide both without the vendor's source.
 
 == Prerequisites
 
-* xref:23-scan-gate.adoc[Step 3] completed: `acs-image-scan`, `promote-image` and `notes-app-build` (version 2) exist in your namespace
-* `notes-legacy:latest` exists in your namespace (built by the xref:20-build-pipelines.adoc#catch-up[catch-up script])
+* xref:23-scan-gate.adoc[Session 2, Step 3] completed: `acs-image-scan`, `promote-image` and `notes-app-build` (version 2) exist in your namespace
+* `notes-legacy:latest` exists in your namespace (built by the xref:30-vendor-intake.adoc#catch-up[catch-up script])
 * `$GIT_REPO_URL` set
 * Remediation level 3 needs cluster-admin for one command, and OpenShift {userns-ocp-version} or later. In the live session the instructor runs it.
 
@@ -94,19 +94,19 @@ icon:clock[] ~1 minute
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 25-vendor-image-intake/inspect-task.yaml \
-         -f 25-vendor-image-intake/uid-test-task.yaml \
-         -f 25-vendor-image-intake/gate-task.yaml \
-         -f 25-vendor-image-intake/pipeline.yaml \
+oc apply -f 32-vendor-image-intake/inspect-task.yaml \
+         -f 32-vendor-image-intake/uid-test-task.yaml \
+         -f 32-vendor-image-intake/gate-task.yaml \
+         -f 32-vendor-image-intake/pipeline.yaml \
   -n "$NS" --context {lab-context}
-oc create -f 25-vendor-image-intake/pipelinerun-intake.yaml -n "$NS" --context {lab-context}
+oc create -f 32-vendor-image-intake/pipelinerun-intake.yaml -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
 In the web console, the shape of the intake is visible at a glance: three independent checks run in parallel, then the gate decides. The checks themselves always succeed; their verdicts are what the gate reads.
 
 .Intake of the image as delivered: rejected by the gate
-image::25-intake-rejected.png[Intake PipelineRun in the OpenShift web console: inspect, scan and uid-test ran in parallel, the gate failed, promote was never started,600]
+image::32-intake-rejected.png[Intake PipelineRun in the OpenShift web console: inspect, scan and uid-test ran in parallel, the gate failed, promote was never started,600]
 
 .Verify: The image is rejected, for three reasons
 [%collapsible]
@@ -172,7 +172,7 @@ These are the same three findings you made by hand in Session 1, now in under a 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context}
+oc apply -f 32-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context}
 oc rollout status deploy/notes-vendor -n "$NS" --context {lab-context} --timeout=120s
 ----
 
@@ -214,8 +214,8 @@ icon:clock[] ~4 minutes (one 2-minute build, two 40-second intake runs)
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-cat 25-vendor-image-intake/relayer/Containerfile
-envsubst < 25-vendor-image-intake/pipelinerun-relayer.yaml | oc create -f - -n "$NS" --context {lab-context}
+cat 32-vendor-image-intake/relayer/Containerfile
+envsubst < 32-vendor-image-intake/pipelinerun-relayer.yaml | oc create -f - -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
@@ -224,7 +224,7 @@ The re-layered image is now `notes-legacy-relayered:latest`. Run intake on it wi
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-ACCEPT_CVES=false envsubst < 25-vendor-image-intake/pipelinerun-intake-relayered.yaml \
+ACCEPT_CVES=false envsubst < 32-vendor-image-intake/pipelinerun-intake-relayered.yaml \
   | oc create -f - -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
@@ -234,7 +234,7 @@ Only the CVEs remain. The fixable ones are in the vendor's layers, and you canno
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-ACCEPT_CVES=true envsubst < 25-vendor-image-intake/pipelinerun-intake-relayered.yaml \
+ACCEPT_CVES=true envsubst < 32-vendor-image-intake/pipelinerun-intake-relayered.yaml \
   | oc create -f - -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
@@ -242,10 +242,10 @@ tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 This time the whole graph is green, and the `gate` log (*Logs* tab, then `gate`) records why the image was approved:
 
 .Intake of the re-layered image with a recorded risk acceptance: approved
-image::25-intake-approved.png[Intake PipelineRun in the OpenShift web console: all checks, the gate and promote succeeded,600]
+image::32-intake-approved.png[Intake PipelineRun in the OpenShift web console: all checks, the gate and promote succeeded,600]
 
 .The gate decision in the web console
-image::25-gate-log.png[Gate log in the OpenShift web console: image configuration WARN, critical CVEs FAIL with risk accepted, runs as arbitrary UID PASS, intake approved,800]
+image::32-gate-log.png[Gate log in the OpenShift web console: image configuration WARN, critical CVEs FAIL with risk accepted, runs as arbitrary UID PASS, intake approved,800]
 
 .Verify: Approved, with the exception recorded on the image
 [%collapsible]
@@ -301,9 +301,9 @@ The platform team creates the SCC once and grants it to one dedicated ServiceAcc
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-cat 25-vendor-image-intake/userns/scc.yaml
-oc apply -f 25-vendor-image-intake/userns/scc.yaml --context {lab-context}
-oc apply -f 25-vendor-image-intake/userns/serviceaccount.yaml -n "$NS" --context {lab-context}
+cat 32-vendor-image-intake/userns/scc.yaml
+oc apply -f 32-vendor-image-intake/userns/scc.yaml --context {lab-context}
+oc apply -f 32-vendor-image-intake/userns/serviceaccount.yaml -n "$NS" --context {lab-context}
 oc adm policy add-scc-to-user vendor-root-userns -z vendor-root -n "$NS" --context {lab-context}
 ----
 
@@ -312,7 +312,7 @@ The tenant deploys the image with that ServiceAccount:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 25-vendor-image-intake/userns/deployment.yaml -n "$NS" --context {lab-context}
+oc apply -f 32-vendor-image-intake/userns/deployment.yaml -n "$NS" --context {lab-context}
 oc rollout status deploy/notes-vendor-userns -n "$NS" --context {lab-context} --timeout=120s
 ----
 
@@ -403,13 +403,13 @@ Pick one vendor image you run today. Without looking at its documentation, predi
 | Remaining Problem | Addressed In
 
 | Every tenant has a copy of the intake Tasks
-| xref:26-pipeline-service.adoc[Step 6: Pipelines as a Service]
+| xref:33-pipeline-service.adoc[Step 3: Pipelines as a Service]
 
 | Approved images are only in this namespace
 | Registry design discussion: a central registry with quarantine and approved repositories
 
 | A new vendor release has to go through intake again
-| Session 6: the monthly patch cycle
+| Session 7: the monthly patch cycle
 |===
 
 == Official Documentation
@@ -444,13 +444,13 @@ Pick one vendor image you run today. Without looking at its documentation, predi
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc delete -f 25-vendor-image-intake/userns/deployment.yaml -f 25-vendor-image-intake/userns/serviceaccount.yaml \
+oc delete -f 32-vendor-image-intake/userns/deployment.yaml -f 32-vendor-image-intake/userns/serviceaccount.yaml \
   -n "$NS" --context {lab-context} --ignore-not-found
-oc delete -f 25-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context} --ignore-not-found
+oc delete -f 32-vendor-image-intake/deployment-runtime-fix.yaml -n "$NS" --context {lab-context} --ignore-not-found
 oc delete pipelinerun -l tekton.dev/pipeline=vendor-intake -n "$NS" --context {lab-context} --ignore-not-found
 oc delete imagestream notes-vendor notes-legacy-relayered -n "$NS" --context {lab-context} --ignore-not-found
-oc delete -f 25-vendor-image-intake/pipeline.yaml -f 25-vendor-image-intake/gate-task.yaml \
-  -f 25-vendor-image-intake/uid-test-task.yaml -f 25-vendor-image-intake/inspect-task.yaml \
+oc delete -f 32-vendor-image-intake/pipeline.yaml -f 32-vendor-image-intake/gate-task.yaml \
+  -f 32-vendor-image-intake/uid-test-task.yaml -f 32-vendor-image-intake/inspect-task.yaml \
   -n "$NS" --context {lab-context} --ignore-not-found
 ----
 
@@ -461,5 +461,5 @@ Cluster-admin only, when no namespace uses it any more:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc delete -f 25-vendor-image-intake/userns/scc.yaml --context {lab-context} --ignore-not-found
+oc delete -f 32-vendor-image-intake/userns/scc.yaml --context {lab-context} --ignore-not-found
 ----

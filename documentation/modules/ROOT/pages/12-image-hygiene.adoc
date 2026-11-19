@@ -190,7 +190,7 @@ The image no longer contains a greeting, an environment name or a token. That is
 
 *What:* Look at the image digest that the Deployment actually runs, and at the digest of the base image.
 
-*Why:* Tags move and digests do not. To know which base image patch level runs in production, which is the basis of the monthly patch cycle in Session 6, you have to track digests.
+*Why:* Tags move and digests do not. To know which base image patch level runs in production, which is the basis of the monthly patch cycle in Session 7, you have to track digests.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -250,7 +250,7 @@ The `image.openshift.io/triggers` annotation on the Deployment replaced `notes-a
 | xref:13-config-and-secrets.adoc[Step 3: Configuration and Secrets]
 
 | The base image tag `latest` floats, and nobody is alerted when it is patched
-| Session 6: Monthly Patch Cycle
+| Session 7: Monthly Patch Cycle
 
 | Builds are started by hand from a laptop
 | Session 2: Build Pipelines

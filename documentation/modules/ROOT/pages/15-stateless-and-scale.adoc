@@ -298,7 +298,7 @@ notes-app   2               N/A               1                     2m
 | Remaining Problem | Addressed In
 
 | The database itself holds state that must be backed up and restored
-| Session 5: Backup and Restore
+| Session 6: Backup and Restore
 
 | Deciding which of your applications can follow this pattern
 | xref:16-admission-checklist.adoc[Step 6: Platform Admission Checklist]

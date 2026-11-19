@@ -1,5 +1,5 @@
 # source-build-pipeline.yaml
-# Purpose: The Step 3 build pipeline, published by the platform team in the
+# Purpose: The Session 2, Step 3 build pipeline, published by the platform team in the
 #          platform-pipelines namespace as a reusable service. Every Task is
 #          resolved from a central namespace (cluster resolver), so tenants run
 #          it without copying anything into their own namespace.

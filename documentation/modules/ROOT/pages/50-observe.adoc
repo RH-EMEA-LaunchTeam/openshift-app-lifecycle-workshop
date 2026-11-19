@@ -1,4 +1,4 @@
-= Session 4 - Run and Observe: Metrics, Alerts and Logs That Scale
+= Session 5 - Run and Observe: Metrics, Alerts and Logs That Scale
 include::_attributes.adoc[]
 
 IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.

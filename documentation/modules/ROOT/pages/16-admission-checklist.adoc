@@ -134,7 +134,7 @@ Look at the `notes-db` rows too. The database is a single replica with a PVC (wa
 
 The legacy image passes item 3 because its ImageStream has local lookup enabled: OpenShift resolved `notes-legacy:latest` to a digest when the Deployment was created. Pinning is often something the platform can do for the tenant.
 
-NOTE: The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as `notes-legacy` does. In Session 7, the same rules become enforced policies in Red Hat Advanced Cluster Security.
+NOTE: The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as `notes-legacy` does. In Session 8, the same rules become enforced policies in Red Hat Advanced Cluster Security.
 ====
 
 '''
@@ -233,7 +233,7 @@ NOTE: The script is a teaching aid, not a complete policy engine. Item 8 only ch
 | deliver new images with updated base images within an agreed number of days after a security update to the base image is published.
 |===
 
-The last row is not on the checklist, but it is what makes the monthly patch cycle (Session 6) possible for vendor images.
+The last row is not on the checklist, but it is what makes the monthly patch cycle (Session 7) possible for vendor images.
 ====
 
 '''
@@ -299,10 +299,10 @@ Use this table as a template, one row per application:
 | xref:20-build-pipelines.adoc[Session 2: Build Pipelines]
 
 | Namespaces, quotas and deployments are created by hand
-| xref:30-gitops-deploy.adoc[Session 3: GitOps Deployment]
+| xref:40-gitops-deploy.adoc[Session 4: GitOps Deployment]
 
 | The checklist is checked, not enforced
-| xref:70-secure-operations.adoc[Session 7: Secure Operations]
+| xref:80-secure-operations.adoc[Session 8: Secure Operations]
 |===
 
 == Official Documentation

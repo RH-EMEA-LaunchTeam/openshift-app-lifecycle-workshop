@@ -1,5 +1,5 @@
 # vendor-intake-pipeline.yaml
-# Purpose: The Step 5 intake pipeline, published by the platform team in the
+# Purpose: The Step 2 intake pipeline, published by the platform team in the
 #          platform-pipelines namespace. Tenants reference it with the cluster
 #          resolver; the checks and the gate are owned and versioned centrally.
 apiVersion: tekton.dev/v1

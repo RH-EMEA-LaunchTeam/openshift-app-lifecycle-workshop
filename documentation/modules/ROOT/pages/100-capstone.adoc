@@ -1,4 +1,4 @@
-= Session 9 - Capstone: The Full Monthly Lifecycle, End to End
+= Session 10 - Capstone: The Full Monthly Lifecycle, End to End
 include::_attributes.adoc[]
 
 IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.

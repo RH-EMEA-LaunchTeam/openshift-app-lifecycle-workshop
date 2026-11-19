@@ -2,7 +2,7 @@
 
 A workshop series that follows one application through its whole operational lifecycle on OpenShift: make it onboarding-ready, build it, deploy it with GitOps, observe it, back it up, patch its base image monthly, verify it and restore it. Each session is a 60 to 90 minute live demo on a throwaway cluster followed by hands-on access.
 
-Session 1 (onboarding-ready applications) is complete. Sessions 2 to 9 are planned and shown as outlines.
+Session 1 (onboarding-ready applications), Session 2 (build pipelines) and Session 3 (vendor images and shared pipelines) are complete. Sessions 4 to 10 are planned and shown as outlines.
 
 == View the course
 
@@ -58,8 +58,29 @@ The generated site is output to `gh-pages/`.
 
 | `16-admission-checklist/`
 | Session 1, Step 6 - namespace audit script for the platform admission checklist
+
+| `20-session-prep/`
+| Sessions 2 and 3 - instructor platform setup, participant catch-up script and Web Terminal preparation
+
+| `21-pipelines-basics/`
+| Session 2, Step 1 - first Task and the shared pipeline workspace
+
+| `22-source-pipeline/`
+| Session 2, Step 2 - source-to-image pipeline and promote Task
+
+| `23-scan-gate/`
+| Session 2, Step 3 - ACS scan Task and the gated pipeline
+
+| `31-pipelines-as-code/`, `.tekton/`
+| Session 3, Step 1 - Pipelines as Code Repository and triggers
+
+| `32-vendor-image-intake/`
+| Session 3, Step 2 - vendor image intake pipeline and remediation levels
+
+| `33-pipeline-service/`
+| Session 3, Step 3 - pipelines published once by the platform team
 |===
 
 == Naming convention
 
-Pages and step directories use a two-digit prefix: the first digit is the session, the second the step within it (`13-` is Session 1, Step 3). `00-setup` is shared by all sessions.
+Pages and step directories use a two-digit prefix: the first digit is the session, the second the step within it (`13-` is Session 1, Step 3). `00-setup` is shared by all sessions. Session 10 uses the prefix `100-`.

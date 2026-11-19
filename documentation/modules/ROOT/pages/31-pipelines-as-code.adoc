@@ -1,4 +1,4 @@
-= Step 4 - Pipelines as Code: Pull Requests Build, Merges Promote
+= Step 1 - Pipelines as Code: Pull Requests Build, Merges Promote
 include::_attributes.adoc[]
 
 TIP: This step is optional in the hands-on window. It needs a GitHub account and about 30 minutes.
@@ -8,11 +8,11 @@ So far someone has started every pipeline with `oc create`. This step connects y
 * A *pull request* that changes `app/` builds and scans the image, and reports the result as a check on the pull request. It does *not* promote.
 * A *merge (push) to main* builds, scans and promotes, which rolls out the application.
 
-This is the same pull-request workflow proposed for tenant onboarding in Session 3: changes are reviewed in Git, and what reaches the cluster is what was approved.
+This is the same pull-request workflow proposed for tenant onboarding in Session 4: changes are reviewed in Git, and what reaches the cluster is what was approved.
 
 == Prerequisites
 
-* xref:23-scan-gate.adoc[Step 3] completed: `notes-app-build` (version 2) exists in your namespace
+* xref:23-scan-gate.adoc[Session 2, Step 3] completed: `notes-app-build` (version 2) exists in your namespace
 * A GitHub account, and `$GITHUB_FORK_URL` and `$PAC_WEBHOOK_URL` set in `myenv.sh` (see xref:00-setup.adoc#export-variables[setup])
 
 == How It Works
@@ -107,7 +107,7 @@ oc create secret generic github-pac \
   --from-literal=provider.token="$GITHUB_TOKEN" \
   --from-literal=webhook.secret="$WEBHOOK_SECRET" \
   -n "$NS" --context {lab-context}
-envsubst < 24-pipelines-as-code/repository.yaml | oc apply -f - -n "$NS" --context {lab-context}
+envsubst < 31-pipelines-as-code/repository.yaml | oc apply -f - -n "$NS" --context {lab-context}
 ----
 
 .Verify: The Repository exists
@@ -244,11 +244,11 @@ The version reported by the application is the merge commit on `main` of your fo
 
 '''
 
-== What This Solves (Compared to Step 3)
+== What This Solves (Compared to Session 2, Step 3)
 
 [cols="2,3",options="header"]
 |===
-| Step 3 | Now
+| Session 2, Step 3 | Now
 
 | A person starts each run
 | Git events start runs
@@ -270,10 +270,10 @@ The version reported by the application is the merge commit on `main` of your fo
 | Remaining Problem | Addressed In
 
 | Images that are delivered, not built from source
-| xref:25-vendor-image-intake.adoc[Step 5: Vendor Image Intake]
+| xref:32-vendor-image-intake.adoc[Step 2: Vendor Image Intake]
 
 | Deployment manifests are still applied by hand
-| Session 3: GitOps deployment with Argo CD
+| Session 4: GitOps deployment with Argo CD
 |===
 
 == Official Documentation

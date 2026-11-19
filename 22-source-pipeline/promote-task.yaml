@@ -2,7 +2,7 @@
 # Purpose: Promote an image inside the namespace by pointing one ImageStreamTag
 #          at another (for example notes-app:<commit> -> notes-app:latest).
 #          Optionally records a note on the target ImageStream, used for intake
-#          exceptions in Step 5. Uses the oc client image shipped with the cluster.
+#          exceptions in Session 3, Step 2. Uses the oc client image shipped with the cluster.
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:

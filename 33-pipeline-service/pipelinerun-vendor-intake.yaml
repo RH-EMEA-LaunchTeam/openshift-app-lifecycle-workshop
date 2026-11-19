@@ -1,6 +1,6 @@
 # pipelinerun-vendor-intake.yaml
 # Purpose: A tenant runs the centrally published vendor-intake pipeline on the
-#          re-layered image from Step 5. Create with "oc create".
+#          re-layered image from Step 2. Create with "oc create".
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:

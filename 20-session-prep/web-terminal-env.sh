@@ -36,5 +36,5 @@ export ROUTE
 
 echo "user:    $(oc whoami --context lab)"
 echo "NS:      $NS"
-echo "ROUTE:   ${ROUTE:-(not created yet - run the Session 2 catch-up)}"
+echo "ROUTE:   ${ROUTE:-(not created yet - run the catch-up script)}"
 echo "tkn:     $(tkn version --component client 2>/dev/null)"

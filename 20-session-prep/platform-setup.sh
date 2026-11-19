@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # platform-setup.sh
 # Purpose: Instructor-only, run once per workshop cluster before Session 2
-#          (cluster-admin). Installs OpenShift Pipelines, ACS and Web Terminal,
+#          or Session 3 (cluster-admin). Installs OpenShift Pipelines, ACS and Web Terminal,
 #          publishes the shared Tasks and Pipelines in platform-pipelines,
 #          builds the legacy image once (one Docker Hub pull for everybody),
 #          and prepares one namespace per participant: admin rights for the
@@ -117,11 +117,11 @@ occ get namespace platform-pipelines >/dev/null 2>&1 || occ create namespace pla
 occ apply -n platform-pipelines \
   -f 22-source-pipeline/promote-task.yaml \
   -f 23-scan-gate/acs-scan-task.yaml \
-  -f 25-vendor-image-intake/inspect-task.yaml \
-  -f 25-vendor-image-intake/uid-test-task.yaml \
-  -f 25-vendor-image-intake/gate-task.yaml \
-  -f 26-pipeline-service/source-build-pipeline.yaml \
-  -f 26-pipeline-service/vendor-intake-pipeline.yaml >/dev/null
+  -f 32-vendor-image-intake/inspect-task.yaml \
+  -f 32-vendor-image-intake/uid-test-task.yaml \
+  -f 32-vendor-image-intake/gate-task.yaml \
+  -f 33-pipeline-service/source-build-pipeline.yaml \
+  -f 33-pipeline-service/vendor-intake-pipeline.yaml >/dev/null
 # Every authenticated user may browse the catalogue (read-only)
 occ adm policy add-role-to-group view system:authenticated -n platform-pipelines >/dev/null
 

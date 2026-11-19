@@ -1,12 +1,9 @@
-= Session 2 - Build Pipelines: From Source and Vendor Images to an Approved Image
+= Session 2 - Build Pipelines: From Source to an Approved Image
 include::_attributes.adoc[]
 
-In Session 1 you built images by hand with `oc start-build` and judged them against the admission checklist by reading YAML. This session turns both into pipelines that run the same way every time, for every team:
+In Session 1 you built images by hand with `oc start-build` and judged them against the admission checklist by reading YAML. This session turns the build into a pipeline that runs the same way every time, for every team: *applications you build from source* are cloned, built, scanned, and promoted only if the scan passes.
 
-* *Applications you build from source* go through a pipeline: clone, build, scan, and promote only if the scan passes.
-* *Images you cannot rebuild*, usually delivered by a vendor, go through an *intake* pipeline: inspect, scan, test under the platform's default security, then approve, fix or reject.
-
-On most platforms that host vendor software, the second pipeline matters more. This session gives it the most time.
+xref:30-vendor-intake.adoc[Session 3] continues with the same pipelines: Git triggers, an *intake* pipeline for images you cannot rebuild, and pipelines that the platform team publishes once for every tenant.
 
 The pipelines run on *OpenShift Pipelines*, Red Hat's supported distribution of the Tekton project, and scan with *Red Hat Advanced Cluster Security (ACS)*. If your teams already use another CI system, the same stages and gates apply. Only the tool changes.
 
@@ -37,18 +34,6 @@ The pipelines run on *OpenShift Pipelines*, Red Hat's supported distribution of 
 | 3
 | xref:23-scan-gate.adoc[Scan Gate]
 | Images with critical vulnerabilities never reach the running Deployment
-
-| 4
-| xref:24-pipelines-as-code.adoc[Pipelines as Code] (optional)
-| Pull requests build and scan, merges promote, with results reported in GitHub
-
-| 5
-| xref:25-vendor-image-intake.adoc[Vendor Image Intake]
-| An intake pipeline and four remediation levels for images that run as root
-
-| 6
-| xref:26-pipeline-service.adoc[Pipelines as a Service] (optional)
-| The platform team publishes the pipelines once and every tenant reuses them
 |===
 
 == Before you start
@@ -69,7 +54,7 @@ This session runs on a fresh cluster that several participants share. Each parti
 | Platform guardrails from xref:14-health-and-resources.adoc#tenant-guardrails[Session 1, Step 4]
 
 | `platform-pipelines` namespace with shared Tasks and Pipelines
-| Used in xref:26-pipeline-service.adoc[Step 6]
+| Used in xref:33-pipeline-service.adoc[Session 3, Step 3]
 |===
 
 NOTE: To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cluster-admin, *at least one hour before the session*. Its header explains the arguments. Most of the time goes into the first download of the ACS vulnerability database (about 40 minutes on a fresh cluster); the script waits until a real scan succeeds.
@@ -78,7 +63,7 @@ NOTE: To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cl
 
 *What:* Follow xref:00-setup.adoc[Cluster Setup] with your own user and namespace, including the Session 2 variables.
 
-*Why:* Every command in this session uses `$NS`, `$GIT_REPO_URL` and the `{lab-context}` context. Step 4 also needs `$GITHUB_FORK_URL` and `$PAC_WEBHOOK_URL`.
+*Why:* Every command in this session uses `$NS`, `$GIT_REPO_URL` and the `{lab-context}` context.
 
 .Verify: Context, namespace and tools
 [%collapsible]
@@ -162,9 +147,8 @@ Version `1.0` comes from the hand-started build. After Step 2 the version is a G
 == Questions to prepare
 
 * Which registry will be the long-term source of truth for images, and how does it relate to the cluster's internal registry?
-* Do vendors deliver source, Containerfiles, images or image archives? For how many of your applications each?
 * Who owns the pipeline definitions: the platform team, the tenants, or both (central templates, tenant-specific parameters)?
-* Who may accept a vulnerability risk for a vendor image, and for how long?
+* Which vulnerabilities should block a build, and who decides?
 
 == Official Documentation
 

@@ -1,0 +1,156 @@
+= Session 3 - Vendor Images and Shared Pipelines: Intake, Git Triggers and Pipelines as a Service
+include::_attributes.adoc[]
+
+xref:20-build-pipelines.adoc[Session 2] turned the build of `notes-app` into a pipeline that clones, builds, scans and promotes only images without fixable critical CVEs. This session takes the same pipelines further:
+
+* *Git triggers*: pull requests build and scan, merges promote, without anyone running `oc create`.
+* *Images you cannot rebuild*, usually delivered by a vendor, go through an *intake* pipeline: inspect, scan, test under the platform's default security, then approve, fix or reject.
+* *Pipelines as a service*: the platform team publishes the pipelines once, and every tenant reuses them.
+
+On most platforms that host vendor software, the intake pipeline matters most. This session gives it the most time.
+
+== Where it fits
+
+[cols="1,3",options="header"]
+|===
+| Lifecycle stage | Builds on
+
+| Build
+| The `notes-app-build` pipeline with its scan gate from xref:23-scan-gate.adoc[Session 2, Step 3], the legacy image from xref:11-legacy-app.adoc[Session 1, Step 1] and the xref:16-admission-checklist.adoc[admission checklist]
+|===
+
+== Steps
+
+[cols="1,3,4",options="header"]
+|===
+| Step | Page | What you get
+
+| 1
+| xref:31-pipelines-as-code.adoc[Pipelines as Code] (optional)
+| Pull requests build and scan, merges promote, with results reported in GitHub
+
+| 2
+| xref:32-vendor-image-intake.adoc[Vendor Image Intake]
+| An intake pipeline and four remediation levels for images that run as root
+
+| 3
+| xref:33-pipeline-service.adoc[Pipelines as a Service] (optional)
+| The platform team publishes the pipelines once and every tenant reuses them
+|===
+
+== Before you start
+
+Like Session 2, this session runs on a cluster that several participants share. Each participant has their own user and their own namespace, with admin rights on that namespace only. The instructor has already done the platform-side setup.
+
+[cols="2,4",options="header"]
+|===
+| Prepared by the platform team (instructor) | Why it is not part of your steps
+
+| OpenShift Pipelines operator, with Pipelines as Code
+| Cluster-wide component, installed once by the platform team
+
+| ACS Central and SecuredCluster, plus an `acs-api` Secret in your namespace
+| The security team owns the scanner and hands each tenant a token for its CI
+
+| LimitRange and ResourceQuota on your namespace
+| Platform guardrails from xref:14-health-and-resources.adoc#tenant-guardrails[Session 1, Step 4]
+
+| `platform-pipelines` namespace with shared Tasks and Pipelines
+| Used in xref:33-pipeline-service.adoc[Step 3]
+|===
+
+NOTE: The platform setup is the same as for Session 2. To prepare your own cluster, run `20-session-prep/platform-setup.sh` as cluster-admin, *at least one hour before the session*. Its header explains the arguments.
+
+=== 1. Complete the setup page
+
+*What:* Follow xref:00-setup.adoc[Cluster Setup] with your own user and namespace. For the optional xref:31-pipelines-as-code.adoc[Step 1], also set `$GITHUB_FORK_URL` and `$PAC_WEBHOOK_URL`.
+
+*Why:* Every command in this session uses `$NS`, `$GIT_REPO_URL` and the `{lab-context}` context.
+
+.Verify: Context, namespace and tools
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context {lab-context}
+oc get project "$NS" --context {lab-context} -o name
+tkn version --component client
+----
+
+[.console-output]
+[source,bash]
+----
+user1
+project.project.openshift.io/app-lifecycle-user1
+Client version: 0.46.2
+----
+
+Any recent `tkn` works.
+====
+
+'''
+
+[#catch-up]
+=== 2. Catch up to the end of Session 2
+
+icon:clock[] ~3 minutes
+
+*What:* If you are on a fresh cluster, run the catch-up script with the session number `3`. It builds both images, deploys `notes-app` as at the end of Session 1, and adds the Session 2 pipeline objects: the `pipeline-ws` claim, the `promote-image` and `acs-image-scan` Tasks and version 2 of `notes-app-build`.
+
+*Why:* Every step in this session starts from those objects. If you still have your namespace from Session 2 with Step 3 completed, skip the script and only check that `$ROUTE` is set.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+./20-session-prep/catch-up.sh "$NS" {lab-context} 3
+----
+
+Then export the route and save it in `myenv.sh`:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export ROUTE=$(oc get route notes-app -n "$NS" --context {lab-context} -o jsonpath='{.spec.host}')
+echo "export ROUTE=$ROUTE" >> myenv.sh
+----
+
+NOTE: The script is safe to re-run, also on a namespace that already has the Session 2 objects.
+
+.Verify: The Session 2 pipeline and Tasks exist
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pipeline notes-app-build -n "$NS" --context {lab-context} -o jsonpath='{.spec.tasks[*].name}{"\n"}'
+oc get task,pvc -n "$NS" --context {lab-context} -o name
+oc get istag notes-legacy:latest -n "$NS" --context {lab-context} -o name
+----
+
+[.console-output]
+[source,bash]
+----
+clone build scan promote
+task.tekton.dev/acs-image-scan
+task.tekton.dev/promote-image
+persistentvolumeclaim/notes-db
+persistentvolumeclaim/pipeline-ws
+imagestreamtag.image.openshift.io/notes-legacy:latest
+----
+
+If you kept your Session 2 namespace, the list can also show `hello-platform` from Session 2, Step 1.
+====
+
+'''
+
+== Questions to prepare
+
+* Do vendors deliver source, Containerfiles, images or image archives? For how many of your applications each?
+* Who may accept a vulnerability risk for a vendor image, and for how long?
+* How many pipeline templates would cover most of your applications, and who maintains them?
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/[Red Hat OpenShift Pipelines]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/[Red Hat Advanced Cluster Security for Kubernetes]

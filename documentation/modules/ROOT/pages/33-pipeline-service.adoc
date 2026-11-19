@@ -1,15 +1,15 @@
-= Step 6 - Pipelines as a Service: Publish Once, Reuse Everywhere
+= Step 3 - Pipelines as a Service: Publish Once, Reuse Everywhere
 include::_attributes.adoc[]
 
 TIP: This step is optional in the hands-on window. It takes about 15 minutes.
 
-In Steps 2 to 5 every Task and Pipeline was copied into your namespace. With a hundred applications, that means a hundred copies of the scan Task, each slowly drifting from the others. This step uses the pipelines that the platform team has published *once*, in a shared `platform-pipelines` namespace. Tenants reference them by name with the cluster resolver and keep only their PipelineRuns.
+In Session 2 and in Step 2 of this session, every Task and Pipeline was copied into your namespace. With a hundred applications, that means a hundred copies of the scan Task, each slowly drifting from the others. This step uses the pipelines that the platform team has published *once*, in a shared `platform-pipelines` namespace. Tenants reference them by name with the cluster resolver and keep only their PipelineRuns.
 
 This also answers "we have a hundred vendors with different needs": tenants do not write pipelines. They choose one of a small number of maintained templates (build from source, intake a vendor image) and set parameters.
 
 == Prerequisites
 
-* xref:25-vendor-image-intake.adoc[Step 5] completed: `notes-legacy-relayered:latest` exists
+* xref:32-vendor-image-intake.adoc[Step 2] completed: `notes-legacy-relayered:latest` exists
 * The `platform-pipelines` namespace was prepared by the platform team (`20-session-prep/platform-setup.sh`)
 
 == How It Works
@@ -89,14 +89,14 @@ no
 [#compare]
 === 2. Compare a central pipeline with your copy
 
-*What:* Compare the published `source-build` with your `notes-app-build` from Step 3.
+*What:* Compare the published `source-build` with your `notes-app-build` from Session 2, Step 3.
 
 *Why:* They are the same pipeline. Only the `taskRef` blocks differ: they point to the central namespace instead of your own.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-diff 23-scan-gate/pipeline.yaml 26-pipeline-service/source-build-pipeline.yaml
+diff 23-scan-gate/pipeline.yaml 33-pipeline-service/source-build-pipeline.yaml
 ----
 
 .Verify: Only references changed
@@ -130,10 +130,10 @@ icon:clock[] ~5 minutes
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-envsubst < 26-pipeline-service/pipelinerun-source-build.yaml | oc create -f - -n "$NS" --context {lab-context}
+envsubst < 33-pipeline-service/pipelinerun-source-build.yaml | oc create -f - -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 
-oc create -f 26-pipeline-service/pipelinerun-vendor-intake.yaml -n "$NS" --context {lab-context}
+oc create -f 33-pipeline-service/pipelinerun-vendor-intake.yaml -n "$NS" --context {lab-context}
 tkn pipelinerun logs --last -f -n "$NS" --context {lab-context}
 ----
 
@@ -162,7 +162,7 @@ The runs, their pods and their logs are in *your* namespace. Nothing ran in `pla
 [#cleanup-local]
 === 4. Remove your local copies
 
-*What:* Delete the Tasks and Pipelines you copied into your namespace in Steps 2 to 5.
+*What:* Delete the Tasks and Pipelines you copied into your namespace in Session 2, Steps 2 and 3, and in Step 2 of this session.
 
 *Why:* Once the central versions exist, local copies are drift waiting to happen. A tenant namespace should contain runs, not definitions.
 
@@ -192,18 +192,18 @@ task.tekton.dev/hello-platform   49m
 15
 ----
 
-Only the `hello-platform` Task from Step 1 is left (remove it with the Step 1 reset). The second number counts your pipeline runs, plus a header line.
+Only the `hello-platform` Task from Session 2, Step 1 is left (remove it with the Session 2, Step 1 reset). The second number counts your pipeline runs, plus a header line.
 
-NOTE: If you completed xref:24-pipelines-as-code.adoc[Step 4], its `.tekton/` files reference `notes-app-build` by name. To keep it working, change their `pipelineRef` to the cluster resolver block from `26-pipeline-service/pipelinerun-source-build.yaml`.
+NOTE: If you completed xref:31-pipelines-as-code.adoc[Step 1], its `.tekton/` files reference `notes-app-build` by name. To keep it working, change their `pipelineRef` to the cluster resolver block from `33-pipeline-service/pipelinerun-source-build.yaml`.
 ====
 
 '''
 
-== What This Solves (Compared to Step 5)
+== What This Solves (Compared to Step 2)
 
 [cols="2,3",options="header"]
 |===
-| Step 5 | Now
+| Step 2 | Now
 
 | Every namespace has its own copy of every Task
 | One maintained copy, referenced by all tenants
@@ -222,7 +222,7 @@ NOTE: If you completed xref:24-pipelines-as-code.adoc[Step 4], its `.tekton/` fi
 | Remaining Problem | Addressed In
 
 | Shared definitions are applied by hand
-| Session 3: the `platform-pipelines` namespace managed by Argo CD from Git
+| Session 4: the `platform-pipelines` namespace managed by Argo CD from Git
 
 | A change to a shared Task affects everyone at once
 | Versioning: publish `source-build-v2` alongside `source-build`, or reference Tasks from a Git tag with the Git resolver
@@ -260,4 +260,4 @@ oc delete pipelinerun -l app.kubernetes.io/part-of=notes-app -n "$NS" --context 
 
 NOTE: Deleted runs can still appear in the web console's run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones `tkn pipelinerun list` and `tkn taskrun list` show.
 
-To recreate the local copies for Steps 2 to 5, re-run the `oc apply` commands of those steps.
+To recreate the local copies, re-run the `oc apply` commands of Session 2, Steps 2 and 3, and of Step 2.
