@@ -83,53 +83,62 @@ The series is written for platform teams that are bringing many existing contain
 .xref:23-scan-gate.adoc[Step 3: Scan gate]
 * xref:23-scan-gate.adoc#run-fail[Block critical CVEs]
 
+[.tile]
+.xref:24-pipelines-as-code.adoc[Step 4: Pipelines as Code]
+* xref:24-pipelines-as-code.adoc#pull-request[Pull requests build]
+* xref:24-pipelines-as-code.adoc#merge[Merges promote]
+
+[.tile]
+.xref:25-vendor-image-intake.adoc[Step 5: Vendor image intake]
+* xref:25-vendor-image-intake.adoc#run-intake[Automated intake checks]
+* xref:25-vendor-image-intake.adoc#level-2[Re-layer without source]
+* xref:25-vendor-image-intake.adoc#level-3[Root in a user namespace]
+
+[.tile]
+.xref:26-pipeline-service.adoc[Step 6: Pipelines as a service]
+* xref:26-pipeline-service.adoc#catalogue[Publish once, reuse everywhere]
+
 [.tiles.browse]
 == Upcoming Sessions
 
 [.tile]
-.xref:30-vendor-intake.adoc[Session 3: Vendor images and shared pipelines]
-* Pull requests build, merges promote
-* Vendor image intake
-* Pipelines as a service
-
-[.tile]
-.xref:40-gitops-deploy.adoc[Session 4: GitOps deployment]
+.xref:30-gitops-deploy.adoc[Session 3: GitOps deployment]
 * Tenant onboarding by pull request
 * Kustomize overlays
 * Promotion between environments
 
 [.tile]
-.xref:50-observe.adoc[Session 5: Run and observe]
+.xref:40-observe.adoc[Session 4: Run and observe]
 * User workload monitoring
 * Alerts
 * Log filtering and forwarding
 
 [.tile]
-.xref:60-backup-restore.adoc[Session 6: Backup and restore]
+.xref:50-backup-restore.adoc[Session 5: Backup and restore]
 * OADP backup of app and data
 * Restore test
 * Runbook evidence
 
 [.tile]
-.xref:70-monthly-patching.adoc[Session 7: Monthly patch cycle]
+.xref:60-monthly-patching.adoc[Session 6: Monthly patch cycle]
 * Base image update
 * Rebuild, scan, redeploy
 * Ownership model
 
 [.tile]
-.xref:80-secure-operations.adoc[Session 8: Secure operations]
+.xref:70-secure-operations.adoc[Session 7: Secure operations]
 * Security policies
 * Admission control
 * Image age and CVEs
 
 [.tile]
-.xref:90-fleet-environments.adoc[Session 9: Fleet and environments]
+.xref:80-fleet-environments.adoc[Session 8: Fleet and environments]
 * Governance policies
 * Environment strategy
 * Argo CD topology
 
 [.tile]
-.xref:100-capstone.adoc[Session 10: Capstone]
+.xref:90-capstone.adoc[Session 9: Capstone]
 * The full monthly cycle
 * End to end, repeatable
 

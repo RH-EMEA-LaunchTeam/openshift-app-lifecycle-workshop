@@ -1,4 +1,4 @@
-= Session 7 - Monthly Patch Cycle: Base Image to Production Without Manual Steps
+= Session 6 - Monthly Patch Cycle: Base Image to Production Without Manual Steps
 include::_attributes.adoc[]
 
 IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.

@@ -18,18 +18,15 @@ on a throwaway Demo Platform cluster followed by two days of hands-on access.
 - `app/` holds the reference application and both Containerfiles; reused by all sessions
 - YAML manifests live in the root step directories (`11-legacy-app/`, `12-image-hygiene/`, ...)
 - `16-admission-checklist/audit-namespace.sh` audits a namespace against the checklist
-- Session 10 uses a three-digit prefix (`100-capstone`)
-- Session 2 (`21-` to `23-`) is built. Session 3 pages are developed on the
-  `session-3` branch; its manifests (`31-` to `33-`) are on main because
-  `platform-setup.sh` uses them. Sessions 2 and 3 share the same cluster setup. `20-session-prep/` holds the instructor-only
+- Session 2 is built (`21-` to `26-`). `20-session-prep/` holds the instructor-only
   `platform-setup.sh` (cluster-admin: operators, ACS, shared pipelines, tenant
-  namespaces) and the participant `catch-up.sh` (recreates the Session 1 end state, or with `3` also the Session 2 end state)
+  namespaces) and the participant `catch-up.sh` (recreates the Session 1 end state)
   and `web-terminal-env.sh` (prepares an OpenShift Web Terminal: tkn, envsubst, lab
   context, NS/ROUTE)
-- `.tekton/` at the repo root holds the Pipelines as Code triggers for Session 3, Step 1
+- `.tekton/` at the repo root holds the Pipelines as Code triggers for Session 2, Step 4
 - From Session 2 on, participants share one cluster as normal users with admin on
   their own namespace; anything cluster-scoped goes into the instructor prep
-- Sessions 4-10 (`40-` to `100-` pages) are planned outlines; expand them into
+- Sessions 3-9 (`30-` to `90-` pages) are planned outlines; expand them into
   `NN-*.adoc` step pages and `NN-*/` manifest directories when built
 - Steps are progressive: each builds on the previous one
 - `t/` holds private working notes: gitignored, never publish, never reference

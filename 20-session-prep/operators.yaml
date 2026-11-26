@@ -1,5 +1,5 @@
 # operators.yaml
-# Purpose: Platform-side prerequisites for Sessions 2 and 3, applied once per cluster by
+# Purpose: Platform-side prerequisites for Session 2, applied once per cluster by
 #          the instructor (cluster-admin): the OpenShift Pipelines, Red Hat
 #          Advanced Cluster Security (ACS) and Web Terminal operators.
 #          Participants never apply this file.

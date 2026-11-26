@@ -1,4 +1,4 @@
-= Session 6 - Backup and Restore: Proving Recovery, Not Just Running Backups
+= Session 5 - Backup and Restore: Proving Recovery, Not Just Running Backups
 include::_attributes.adoc[]
 
 IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.

@@ -1,5 +1,5 @@
 # notes-app-push.yaml
-# Purpose: Pipelines as Code trigger (Session 3, Step 1). Every push to main
+# Purpose: Pipelines as Code trigger (Session 2, Step 4). Every push to main
 #          that touches app/ builds, scans and promotes the image to
 #          notes-app:latest, which rolls out the Deployment.
 #          Runs the notes-app-build Pipeline that already exists in the

@@ -1,5 +1,5 @@
 # notes-app-pull-request.yaml
-# Purpose: Pipelines as Code trigger (Session 3, Step 1). Every pull request to
+# Purpose: Pipelines as Code trigger (Session 2, Step 4). Every pull request to
 #          main that touches app/ builds and scans the image, and reports the
 #          result as a check on the pull request. It never promotes: only
 #          merged code reaches notes-app:latest.

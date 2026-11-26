@@ -12,7 +12,7 @@ This page prepares your environment: log in to the workshop cluster, export the 
 * `tkn` CLI (from Session 2), the Tekton client for OpenShift Pipelines
 * Session 1: cluster-admin access (some steps create platform-side objects such as quotas)
 * From Session 2: a normal user with admin rights on your own namespace is enough. On a shared cluster, the instructor prepares the platform-side objects for everyone.
-* Session 3 (optional Pipelines as Code step): a GitHub account
+* Session 2, Step 4 (optional): a GitHub account
 
 [TIP]
 ====
@@ -104,7 +104,7 @@ export LAB_API_URL="https://api.<cluster-domain>:6443"
 export NS="app-lifecycle"     # on a shared cluster: the namespace you were given, e.g. app-lifecycle-user1
 export GIT_REPO_URL="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop.git"
 
-# ── Session 3 (optional) ─────────────────────────────────────────────────
+# ── Session 2, Step 4 (optional) ─────────────────────────────────────────
 export GITHUB_FORK_URL="https://github.com/<your-github-user>/openshift-app-lifecycle-workshop"
 export PAC_WEBHOOK_URL="<provided by the instructor>"
 
@@ -133,15 +133,15 @@ oc config rename-context "$(oc config current-context)" lab
 | Clone URL of this workshop repository
 
 | `ROUTE`
-| Session 1 Steps 2 to 5, Sessions 2 and 3
+| Session 1 Steps 2 to 5, Session 2
 | Hostname of the application route. Set in xref:12-image-hygiene.adoc#expose[Step 2], or by the xref:20-build-pipelines.adoc#catch-up[Session 2 catch-up].
 
 | `GITHUB_FORK_URL`
-| xref:30-vendor-intake.adoc[Session 3]
+| xref:24-pipelines-as-code.adoc[Session 2, Step 4]
 | Your fork of the workshop repository on GitHub, without `.git`
 
 | `PAC_WEBHOOK_URL`
-| xref:30-vendor-intake.adoc[Session 3]
+| xref:24-pipelines-as-code.adoc[Session 2, Step 4]
 | Webhook URL of the Pipelines as Code controller. The instructor provides it (route `pipelines-as-code-controller` in `openshift-pipelines`).
 |===
 

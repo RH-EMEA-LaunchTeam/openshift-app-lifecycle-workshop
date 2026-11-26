@@ -1,4 +1,4 @@
-= Session 8 - Secure Operations: From Checklist to Enforced Policy
+= Session 7 - Secure Operations: From Checklist to Enforced Policy
 include::_attributes.adoc[]
 
 IMPORTANT: This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.

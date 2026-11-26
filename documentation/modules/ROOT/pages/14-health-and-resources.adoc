@@ -48,7 +48,7 @@ On a VM, the application has the whole machine to itself and somebody notices wh
 
 *What:* Apply a LimitRange and a ResourceQuota to the namespace.
 
-*Why:* These belong to the platform team, not the application. In Session 4 they are part of the namespace template that every tenant gets through a pull request.
+*Why:* These belong to the platform team, not the application. In Session 3 they are part of the namespace template that every tenant gets through a pull request.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -268,7 +268,7 @@ oc delete pod no-resources -n "$NS" --context {lab-context} --ignore-not-found
 | xref:15-stateless-and-scale.adoc[Step 5: Stateless and Scalable]
 
 | Nobody is alerted when probes fail
-| Session 5: Run and Observe
+| Session 4: Run and Observe
 |===
 
 == Official Documentation

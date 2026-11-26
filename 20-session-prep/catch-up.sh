@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
 # catch-up.sh
-# Purpose: Recreate the end state of an earlier session in an empty namespace,
-#          so the next session can start on a fresh cluster.
-#          Session 2 (default): the end state of Session 1 - both images built,
-#          notes-app running with its ConfigMap, Secrets, PostgreSQL, probes and
-#          3 replicas.
-#          Session 3: the above, plus the end state of Session 2 - the pipeline-ws
-#          claim, the promote-image and acs-image-scan Tasks and version 2 of the
-#          notes-app-build Pipeline.
+# Purpose: Recreate the end state of Session 1 in an empty namespace, so
+#          Session 2 can start on a fresh cluster: both images built, notes-app
+#          running with its ConfigMap, Secrets, PostgreSQL, probes and 3 replicas.
 #          Needs only admin rights on the namespace (no cluster-admin).
 #
-# Usage:   ./20-session-prep/catch-up.sh <namespace> <context> [2|3]
-#          The third argument is the session you are about to start (default 2).
+# Usage:   ./20-session-prep/catch-up.sh <namespace> <context>
 #          Run from the root of the repository. Takes about 3 minutes.
 set -euo pipefail
 
-NS="${1:?usage: $0 <namespace> <context> [2|3]}"
-CTX="${2:?usage: $0 <namespace> <context> [2|3]}"
-SESSION="${3:-2}"
-[[ "$SESSION" == 2 || "$SESSION" == 3 ]] || { echo "session must be 2 or 3"; exit 1; }
+NS="${1:?usage: $0 <namespace> <context>}"
+CTX="${2:?usage: $0 <namespace> <context>}"
 ocx() { oc --context "$CTX" -n "$NS" "$@"; }
 
 [[ -d app && -d 15-stateless-and-scale ]] || { echo "Run from the repository root"; exit 1; }
@@ -57,13 +49,6 @@ ocx apply -f 12-image-hygiene/service.yaml -f 12-image-hygiene/route.yaml \
           -f 15-stateless-and-scale/deployment.yaml -f 15-stateless-and-scale/pdb.yaml >/dev/null
 ocx rollout status deploy/notes-app --timeout=180s >/dev/null
 
-if [[ "$SESSION" == 3 ]]; then
-  echo "==> Session 2 end state: workspace claim, Tasks and notes-app-build version 2"
-  ocx apply -f 21-pipelines-basics/workspace-pvc.yaml \
-            -f 22-source-pipeline/promote-task.yaml \
-            -f 23-scan-gate/acs-scan-task.yaml -f 23-scan-gate/pipeline.yaml >/dev/null
-fi
-
 route=$(ocx get route notes-app -o jsonpath='{.spec.host}')
 # A new route takes a few seconds before the router serves it
 for _ in $(seq 1 30); do
@@ -71,7 +56,7 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 echo
-echo "Session $((SESSION - 1)) state ready. Version currently running:"
+echo "Session 1 state ready. Version currently running:"
 curl -sk "https://$route/api/info"
 echo
 echo "Next: export ROUTE=$route"
