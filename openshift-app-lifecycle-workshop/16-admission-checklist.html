@@ -262,6 +262,54 @@
   </li>
 </ul>
   </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -269,28 +317,25 @@
     <span class="nav-text">Upcoming Sessions</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="30-vendor-intake.html">Session 3: Vendor Images and Shared Pipelines</a>
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="40-gitops-deploy.html">Session 4: GitOps Deployment</a>
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="50-observe.html">Session 5: Run and Observe</a>
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="60-backup-restore.html">Session 6: Backup and Restore</a>
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="70-monthly-patching.html">Session 7: Monthly Patch Cycle</a>
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="80-secure-operations.html">Session 8: Secure Operations</a>
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="90-fleet-environments.html">Session 9: Fleet and Environments</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="100-capstone.html">Session 10: Capstone</a>
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
   </li>
 </ul>
   </li>
@@ -503,7 +548,7 @@ Items 5 (externalised configuration) and 9 (logs to stdout) need a manual review
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as <code>notes-legacy</code> does. In Session 8, the same rules become enforced policies in Red Hat Advanced Cluster Security.
+The script is a teaching aid, not a complete policy engine. Item 8 only checks volumes: it cannot tell whether an app writes important data to its container filesystem, as <code>notes-legacy</code> does. In Session 7, the same rules become enforced policies in Red Hat Advanced Cluster Security.
 </td>
 </tr>
 </table>
@@ -659,7 +704,7 @@ The script is a teaching aid, not a complete policy engine. Item 8 only checks v
 </tbody>
 </table>
 <div class="paragraph">
-<p>The last row is not on the checklist, but it is what makes the monthly patch cycle (Session 7) possible for vendor images.</p>
+<p>The last row is not on the checklist, but it is what makes the monthly patch cycle (Session 6) possible for vendor images.</p>
 </div>
 </div>
 </details>
@@ -834,11 +879,11 @@ The script is a teaching aid, not a complete policy engine. Item 8 only checks v
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Namespaces, quotas and deployments are created by hand</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="40-gitops-deploy.html" class="xref page">Session 4: GitOps Deployment</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="30-gitops-deploy.html" class="xref page">Session 3: GitOps Deployment</a></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The checklist is checked, not enforced</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="80-secure-operations.html" class="xref page">Session 8: Secure Operations</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="70-secure-operations.html" class="xref page">Session 7: Secure Operations</a></p></td>
 </tr>
 </tbody>
 </table>

@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OpenShift Application Lifecycle Workshop :: OpenShift Application Lifecycle Workshop</title>
-    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/30-vendor-intake.html">
-    <link rel="prev" href="23-scan-gate.html">
-    <link rel="next" href="40-gitops-deploy.html">
+    <link rel="canonical" href="https://rh-emea-launchteam.github.io/openshift-app-lifecycle-workshop/openshift-app-lifecycle-workshop/50-backup-restore.html">
+    <link rel="prev" href="40-observe.html">
+    <link rel="next" href="60-monthly-patching.html">
     <meta name="generator" content="Antora 3.0.0">
     <link rel="stylesheet" href="../_/css/site.css">
   </head>
@@ -262,35 +262,80 @@
   </li>
 </ul>
   </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="24-pipelines-as-code.html">Step 4: Pipelines as Code</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#repository">Connect Your Fork</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#pull-request">Pull Request: Build and Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="24-pipelines-as-code.html#merge">Merge: Promote</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="25-vendor-image-intake.html">Step 5: Vendor Image Intake</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#run-intake">Run the Intake Pipeline</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-1">Level 1: Fix the Environment</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-2">Level 2: Re-layer the Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#level-3">Level 3: Root in a User Namespace</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="25-vendor-image-intake.html#decide">Decide and Record</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="26-pipeline-service.html">Step 6: Pipelines as a Service</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#catalogue">The Shared Catalogue</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="26-pipeline-service.html#run-central">Run Central Pipelines</a>
+  </li>
+</ul>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Upcoming Sessions</span>
 <ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="30-gitops-deploy.html">Session 3: GitOps Deployment</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="40-observe.html">Session 4: Run and Observe</a>
+  </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="30-vendor-intake.html">Session 3: Vendor Images and Shared Pipelines</a>
+    <a class="nav-link" href="50-backup-restore.html">Session 5: Backup and Restore</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="40-gitops-deploy.html">Session 4: GitOps Deployment</a>
+    <a class="nav-link" href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="50-observe.html">Session 5: Run and Observe</a>
+    <a class="nav-link" href="70-secure-operations.html">Session 7: Secure Operations</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="60-backup-restore.html">Session 6: Backup and Restore</a>
+    <a class="nav-link" href="80-fleet-environments.html">Session 8: Fleet and Environments</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="70-monthly-patching.html">Session 7: Monthly Patch Cycle</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="80-secure-operations.html">Session 8: Secure Operations</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="90-fleet-environments.html">Session 9: Fleet and Environments</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="100-capstone.html">Session 10: Capstone</a>
+    <a class="nav-link" href="90-capstone.html">Session 9: Capstone</a>
   </li>
 </ul>
   </li>
@@ -310,10 +355,10 @@
   <ul>
     <li><a href="index.html">OpenShift Application Lifecycle Workshop</a></li>
     <li>Upcoming Sessions</li>
-    <li><a href="30-vendor-intake.html">Session 3: Vendor Images and Shared Pipelines</a></li>
+    <li><a href="50-backup-restore.html">Session 5: Backup and Restore</a></li>
   </ul>
 </nav>
-  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/30-vendor-intake.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/RH-EMEA-LaunchTeam/openshift-app-lifecycle-workshop/edit/main/documentation/modules/ROOT/pages/50-backup-restore.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <article class="doc">
@@ -327,13 +372,13 @@
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-This session is planned. Its content will be published before the session.
+This session is planned. Its content will be finalised after the previous sessions, based on the applications and questions the team brings.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>Take the build pipeline from Session 2 further: trigger it from Git, put images you cannot rebuild through an intake pipeline, and let the platform team publish the pipelines once for every tenant.</p>
+<p>Back up <code>notes-app</code> together with its data, restore it into a new namespace, and turn the procedure into a runbook with evidence.</p>
 </div>
 </div>
 </div>
@@ -353,8 +398,8 @@ This session is planned. Its content will be published before the session.
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Build</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>notes-app-build</code> pipeline with its scan gate from <a href="23-scan-gate.html" class="xref page">Session 2, Step 3</a>, the legacy image from <a href="11-legacy-app.html" class="xref page">Session 1, Step 1</a> and the <a href="16-admission-checklist.html" class="xref page">admission checklist</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backup and Restore</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hardened <code>notes-app</code> from <a href="15-stateless-and-scale.html" class="xref page">Session 1</a> and the <a href="16-admission-checklist.html" class="xref page">admission checklist</a></p></td>
 </tr>
 </tbody>
 </table>
@@ -366,13 +411,22 @@ This session is planned. Its content will be published before the session.
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Pipelines as Code (optional): pull requests build and scan, merges promote, with results reported in GitHub</p>
+<p>Install and configure OADP with an object storage location</p>
 </li>
 <li>
-<p>Vendor image intake: an intake pipeline that inspects, scans and tests an image under restricted-v2, and four remediation levels for images that run as root</p>
+<p>Back up the namespace, including persistent volume data</p>
 </li>
 <li>
-<p>Pipelines as a service (optional): the platform team publishes the pipelines once and every tenant reuses them</p>
+<p>Schedule recurring backups with a retention policy</p>
+</li>
+<li>
+<p>Simulate data loss and restore into a new namespace</p>
+</li>
+<li>
+<p>Verify the restored application and data, and record the evidence</p>
+</li>
+<li>
+<p>Discuss what GitOps already recovers and what only a backup can recover</p>
 </li>
 </ol>
 </div>
@@ -384,10 +438,10 @@ This session is planned. Its content will be published before the session.
 <div class="ulist">
 <ul>
 <li>
-<p>An intake pipeline and a documented decision path for vendor images</p>
+<p>A restore runbook</p>
 </li>
 <li>
-<p>A shared pipeline catalogue that tenants reference instead of copying</p>
+<p>Evidence from a restore test</p>
 </li>
 </ul>
 </div>
@@ -399,13 +453,10 @@ This session is planned. Its content will be published before the session.
 <div class="ulist">
 <ul>
 <li>
-<p>Do vendors deliver source, Containerfiles, images or image archives? For how many of your applications each?</p>
+<p>What recovery time and recovery point objectives apply to platform workloads?</p>
 </li>
 <li>
-<p>Who may accept a vulnerability risk for a vendor image, and for how long?</p>
-</li>
-<li>
-<p>How many pipeline templates would cover most of your applications, and who maintains them?</p>
+<p>Where can backup data be stored?</p>
 </li>
 </ul>
 </div>
@@ -417,18 +468,15 @@ This session is planned. Its content will be published before the session.
 <div class="ulist">
 <ul>
 <li>
-<p><a href="https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/">Red Hat OpenShift Pipelines</a></p>
-</li>
-<li>
-<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/">Red Hat Advanced Cluster Security for Kubernetes</a></p>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/backup_and_restore/oadp-application-backup-and-restore">OADP</a></p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <nav class="pagination">
-  <span class="prev"><a href="23-scan-gate.html">Step 3: Scan Gate</a></span>
-  <span class="next"><a href="40-gitops-deploy.html">Session 4: GitOps Deployment</a></span>
+  <span class="prev"><a href="40-observe.html">Session 4: Run and Observe</a></span>
+  <span class="next"><a href="60-monthly-patching.html">Session 6: Monthly Patch Cycle</a></span>
 </nav>
 </article>
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
