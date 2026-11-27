@@ -59,8 +59,8 @@ grep -c '^# PROBLEM' app/Containerfile.legacy
 |===
 | Problem | Why it matters on a shared platform
 
-| Docker Hub base image, floating tag
-| Unknown provenance, no patch commitment, rate-limited pulls, and the content behind `:3.12` changes without notice.
+| Docker Hub base image, old release tag
+| Unknown provenance, no patch commitment, rate-limited pulls, and `:3.12.0` is a release from 2023 that never receives security fixes.
 
 | Root-owned data directory
 | OpenShift does not run containers as root, so the app cannot write there.

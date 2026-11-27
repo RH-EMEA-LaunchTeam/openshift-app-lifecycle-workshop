@@ -3,8 +3,9 @@
 #          It works on a VM. It is NOT ready for a shared OpenShift platform.
 #          Every line marked "PROBLEM" is fixed in Containerfile.
 #
-# PROBLEM: community base image from Docker Hub, floating tag, unknown provenance
-FROM docker.io/library/python:3.12
+# PROBLEM: community base image from Docker Hub, an old release tag that never
+#          receives security fixes, unknown provenance
+FROM docker.io/library/python:3.12.0
 
 WORKDIR /app
 COPY requirements.txt .

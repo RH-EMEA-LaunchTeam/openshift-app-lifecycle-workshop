@@ -117,7 +117,7 @@ notes-db       10   Unprivileged ports             PASS
 notes-db       10   Survives pod loss (replicas)   WARN replicas=1
 notes-legacy   1    Non-root, arbitrary UID        FAIL pods crash under scc=restricted-v2 (check logs for permission errors)
 notes-legacy   2    Approved registry              PASS image-registry.openshift-image-registry.svc:5000/app-lifecycle/notes-legacy
-notes-legacy   2    Approved base image            FAIL docker.io/library/python:3.12
+notes-legacy   2    Approved base image            FAIL docker.io/library/python:3.12.0
 notes-legacy   3    Image pinned by digest         PASS
 notes-legacy   4    No secrets in manifest         PASS
 notes-legacy   4    No secrets in image            FAIL image ENV contains: API_TOKEN
