@@ -174,20 +174,20 @@ image::23-legacy-blocked.png[PipelineRun in the OpenShift web console: clone and
 .Verify: The scan failed and nothing was promoted
 [%collapsible]
 ====
-The `scan` Task lists the critical CVEs of the Debian-based image and ends with:
+The `scan` Task lists the critical CVEs of the Debian-based image, one line per affected package, and ends with:
 
 [.console-output]
 [source,bash]
 ----
-[scan : scan]   FIXABLE  CVE-2026-42216     libopenexr-3-1-30            fixed in 3.2.12-1~deb13u1
+[scan : scan]   FIXABLE  CVE-2024-32002     git                          fixed in 1:2.39.5-0+deb12u1
 [scan : scan]   ...
 [scan : scan]   NO FIX   CVE-2026-6653      libxml2                      (reported, does not block)
-[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
+[scan : scan] critical CVEs: 225 fixable, 19 without a fix yet
 [scan : scan] verdict: FAIL
 [scan : scan] Fixable critical vulnerabilities found: the image is NOT promoted.
 ----
 
-Same code, same pipeline: the Debian-based image has 15 critical findings against 1 for UBI, and 4 of them would disappear with a simple rebuild on a patched base.
+Same code, same pipeline: the image on an old Docker Hub release has more than 200 critical findings against 1 for UBI, and almost all of them already have a fix that the base image never received.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]

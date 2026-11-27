@@ -134,14 +134,12 @@ The `uid-test` Task:
 [uid-test : run] verdict: FAIL
 ----
 
-The `gate` Task:
-
 The `scan` Task:
 
 [.console-output]
 [source,bash]
 ----
-[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
+[scan : scan] critical CVEs: 225 fixable, 19 without a fix yet
 [scan : scan] verdict: FAIL
 ----
 
@@ -456,10 +454,12 @@ oc delete -f 25-vendor-image-intake/pipeline.yaml -f 25-vendor-image-intake/gate
 
 NOTE: Deleted runs can still appear in the web console's run lists, with an archive icon next to their name. OpenShift Pipelines keeps a history of finished runs (Tekton Results), and the console lists it next to the live runs. Opening an archived run in the console may keep loading; the live runs are the ones `tkn pipelinerun list` and `tkn taskrun list` show.
 
-Cluster-admin only, when no namespace uses it any more:
+Cluster-admin only: remove the grant from the namespace, and when no namespace uses the SCC any more, the SCC and the role that `oc adm policy` created for it:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
+oc adm policy remove-scc-from-user vendor-root-userns -z vendor-root -n "$NS" --context {lab-context}
 oc delete -f 25-vendor-image-intake/userns/scc.yaml --context {lab-context} --ignore-not-found
+oc delete clusterrole system:openshift:scc:vendor-root-userns --context {lab-context} --ignore-not-found
 ----
