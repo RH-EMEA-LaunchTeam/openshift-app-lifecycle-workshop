@@ -556,14 +556,11 @@ tkn pipelinerun logs --last -f -n "$NS" --context lab</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>gate</code> Task:</p>
-</div>
-<div class="paragraph">
 <p>The <code>scan</code> Task:</p>
 </div>
 <div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[scan : scan] critical CVEs: 4 fixable, 11 without a fix yet
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">[scan : scan] critical CVEs: 225 fixable, 19 without a fix yet
 [scan : scan] verdict: FAIL</code></pre>
 </div>
 </div>
@@ -991,11 +988,13 @@ Deleted runs can still appear in the web console&#8217;s run lists, with an arch
 </table>
 </div>
 <div class="paragraph">
-<p>Cluster-admin only, when no namespace uses it any more:</p>
+<p>Cluster-admin only: remove the grant from the namespace, and when no namespace uses the SCC any more, the SCC and the role that <code>oc adm policy</code> created for it:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f 25-vendor-image-intake/userns/scc.yaml --context lab --ignore-not-found</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc adm policy remove-scc-from-user vendor-root-userns -z vendor-root -n "$NS" --context lab
+oc delete -f 25-vendor-image-intake/userns/scc.yaml --context lab --ignore-not-found
+oc delete clusterrole system:openshift:scc:vendor-root-userns --context lab --ignore-not-found</code></pre>
 </div>
 </div>
 </div>
